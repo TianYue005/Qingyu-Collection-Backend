@@ -1,0 +1,24 @@
+-- auto-generated definition
+create table chat_message
+(
+    id           bigint auto_increment comment '消息ID'
+        primary key,
+    sender_id    bigint                             not null comment '发送者ID',
+    receiver_id  bigint                             not null comment '接收者ID',
+    content      text                               not null comment '消息内容',
+    message_type tinyint  default 1                 null comment '消息类型：1-文本 2-图片 3-系统消息',
+    status       tinyint  default 0                 null comment '消息状态：0-未读 1-已读',
+    create_time  datetime default CURRENT_TIMESTAMP null comment '发送时间',
+    update_time  datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间'
+)
+    comment '聊天消息表';
+
+create index idx_create_time
+    on chat_message (create_time);
+
+create index idx_receiver
+    on chat_message (receiver_id);
+
+create index idx_sender_receiver
+    on chat_message (sender_id, receiver_id);
+
