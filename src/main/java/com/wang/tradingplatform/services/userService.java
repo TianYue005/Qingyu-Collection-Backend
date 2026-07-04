@@ -2,7 +2,7 @@ package com.wang.tradingplatform.services;
 
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
 
-public interface userServices {
+public interface userService {
     /**
      * 用户注册
      * @param registerDTO 注册请求参数

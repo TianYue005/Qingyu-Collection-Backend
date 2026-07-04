@@ -14,10 +14,10 @@ public class User {
     private Integer userId;
     //用户名
     private String userName;
+    //账号
+    private String account;
     //密码
     private String password;
-    //手机号
-    private String phone;
     //状态 （1正常 2冻结）
     private Integer status;
     //创建时间

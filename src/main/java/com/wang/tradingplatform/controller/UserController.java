@@ -3,7 +3,7 @@ package com.wang.tradingplatform.controller;
 
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
 import com.wang.tradingplatform.pojo.entity.Result;
-import com.wang.tradingplatform.services.userServices;
+import com.wang.tradingplatform.services.userService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     @Autowired
-    private userServices userService;
+    private userService userService;
 
     @Operation(summary = "用户注册")
     @PostMapping("/register")

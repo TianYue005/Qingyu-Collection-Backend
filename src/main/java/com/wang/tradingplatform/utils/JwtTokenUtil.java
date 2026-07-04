@@ -1,11 +1,11 @@
 package com.wang.tradingplatform.utils;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -22,6 +22,7 @@ public class JwtTokenUtil {
 
     private SecretKey secretKey;
 
+
     //初始化密钥
     @PostConstruct
     void init() {
@@ -34,15 +35,42 @@ public class JwtTokenUtil {
     }
 
     //根据用户信息生成JWT令牌
-    public String generateToken(UserDetails userDetails) {
+    public String generateToken(String userAccount) {
         Date now = new Date();
-        Date expireDate = new Date(now.getTime() + expiration);
+        Date expiryDate = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
-                .setSubject(userDetails.getUsername()) // 用户名存入subject
-                .setIssuedAt(now) // 签发时间
-                .setExpiration(expireDate) // 过期时间
-                .signWith(secretKey, SignatureAlgorithm.HS256) // 加密算法
+                .setSubject(userAccount)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(secretKey)
                 .compact();
+    }
+
+
+    // 2. 从token中获取用户账号
+    public String getUserAccountFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.getSubject();
+    }
+
+    // 3. 校验token是否符合规则（能解析出来用户名，并且没有过期）
+    public boolean validateToken(String token, String userAccount) {
+        String username = getUserAccountFromToken(token);
+        return username.equals(userAccount) && !isTokenExpired(token);
+    }
+
+    // 判断token是否过期
+    private boolean isTokenExpired(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.getExpiration().before(new Date());
     }
 }
