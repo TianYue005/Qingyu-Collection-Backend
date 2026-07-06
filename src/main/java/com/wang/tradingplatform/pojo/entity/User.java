@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
@@ -21,9 +22,9 @@ public class User {
     //状态 （1正常 2冻结）
     private Integer status;
     //创建时间
-    private String createTime;
+    private LocalDateTime createTime;
     //更新时间
-    private String updateTime;
+    private LocalDateTime updateTime;
     //用户等级
     private Integer level;
     //用户活跃度

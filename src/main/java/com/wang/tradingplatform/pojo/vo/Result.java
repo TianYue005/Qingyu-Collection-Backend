@@ -1,4 +1,4 @@
-package com.wang.tradingplatform.pojo.entity;
+package com.wang.tradingplatform.pojo.vo;
 
 import lombok.Data;
 

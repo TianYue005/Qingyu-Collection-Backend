@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.wang</groupId>
-    <artifactId>tradingPlatform</artifactId>
+    <artifactId>tradingPlatform-back</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>tradingPlatform</name>
     <description>tradingPlatform</description>

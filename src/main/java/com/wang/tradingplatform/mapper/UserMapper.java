@@ -1,9 +1,8 @@
 package com.wang.tradingplatform.mapper;
 
 import com.wang.tradingplatform.pojo.entity.User;
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.jspecify.annotations.NonNull;
 
@@ -19,13 +18,11 @@ public interface UserMapper {
     /**
      * 新增用户
      */
-    @Insert("INSERT INTO user (user_name, password, phone, status, balance, integral, credit, level, avatar, create_time, update_time, deleted) " +
-            "VALUES (#{userName}, #{password}, #{phone}, #{status}, #{balance}, #{integral}, #{credit}, #{level}, #{avatar}, #{createTime}, #{updateTime}, #{deleted})")
-    @Options(useGeneratedKeys = true, keyProperty = "userId")
     int insert(User user);
 
     /**
      * 根据用户ID查询用户
+     *
      * @param userId
      * @return
      */
@@ -33,18 +30,13 @@ public interface UserMapper {
     User findByUserId(@NonNull String userId);
 
     /**
-     * 根据账号查询对应的角色（role）
-     * @param username
-     * @return
+     * 根据账号查找用户
      */
-    @Select("SELECT role FROM user WHERE user_name = #{username}")
-    String findRoleByUserId(@NonNull String username);
+    @Select("SELECT * FROM user WHERE account = #{account} AND deleted = 0")
+    User findByAccount(@Param("account") String account);
 
     /**
-     * 根据账号查找用户
-     * @param account
-     * @return
+     * 登录 传递密码和账号 能查到就可以登陆
      */
-    @Select("SELECT * FROM user WHERE user_name = #{account} OR phone = #{account}")
-    User findByAccount(String account);
+    Integer login(String account,String password);
 }

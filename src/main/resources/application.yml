@@ -15,5 +15,4 @@ mybatis:
 jwt:
   secret: ${jwt.secret}
   expiration: ${jwt.expiration}
-  tokenHead: Bearer
   tokenTitle: Authorization

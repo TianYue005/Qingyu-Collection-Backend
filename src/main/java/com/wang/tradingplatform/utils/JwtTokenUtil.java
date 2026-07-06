@@ -34,7 +34,7 @@ public class JwtTokenUtil {
         this.secretKey = Keys.hmacShaKeyFor(rawBytes);
     }
 
-    //根据用户信息生成JWT令牌
+    //根据用户信息生成token
     public String generateToken(String userAccount) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
@@ -48,7 +48,7 @@ public class JwtTokenUtil {
     }
 
 
-    // 2. 从token中获取用户账号
+    // 从token中获取用户账号
     public String getUserAccountFromToken(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(secretKey)
@@ -58,7 +58,7 @@ public class JwtTokenUtil {
         return claims.getSubject();
     }
 
-    // 3. 校验token是否符合规则（能解析出来用户名，并且没有过期）
+    // 校验token是否正确且没过期
     public boolean validateToken(String token, String userAccount) {
         String username = getUserAccountFromToken(token);
         return username.equals(userAccount) && !isTokenExpired(token);

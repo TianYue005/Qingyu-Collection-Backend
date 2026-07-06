@@ -1,5 +1,6 @@
 package com.wang.tradingplatform.services;
 
+import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
 
 public interface userService {
@@ -9,4 +10,11 @@ public interface userService {
      * @return 注册结果消息
      */
     String register(RegisterDTO registerDTO);
+
+    /**
+     * 用户登录
+     * @param loginDTO
+     * @return
+     */
+    String login(LoginDTO loginDTO);
 }
