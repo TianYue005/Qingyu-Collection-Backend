@@ -16,7 +16,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(interceptor)
-                .addPathPatterns("/api/**") // 拦截所有请求
+                .addPathPatterns("/api/**","/upload/**") // 拦截所有请求
                 .excludePathPatterns("/api/user/login", "/api/user/register", "/static/**", "/error"); // 放行接口
     }
 
