@@ -10,24 +10,10 @@ import org.jspecify.annotations.NonNull;
 public interface UserMapper {
 
     /**
-     * 根据用户名查询用户
-     */
-    @Select("SELECT * FROM user WHERE user_name = #{userName} AND deleted = 0")
-    User findByUserName(String userName);
-
-    /**
      * 新增用户
      */
     int insert(User user);
 
-    /**
-     * 根据用户ID查询用户
-     *
-     * @param userId
-     * @return
-     */
-    @Select("SELECT * FROM user WHERE user_id = #{userId} AND deleted = 0")
-    User findByUserId(@NonNull String userId);
 
     /**
      * 根据账号查找用户

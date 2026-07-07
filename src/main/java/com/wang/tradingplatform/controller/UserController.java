@@ -28,7 +28,7 @@ public class UserController {
     public Result<String> register(@RequestBody RegisterDTO registerDTO) {
         String msg = userService.register(registerDTO);
         if ("注册成功".equals(msg)) {
-            return Result.success(msg);
+            return Result.success();
         }
         return Result.error(msg);
     }

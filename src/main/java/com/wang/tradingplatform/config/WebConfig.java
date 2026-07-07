@@ -17,14 +17,14 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(interceptor)
                 .addPathPatterns("/api/**") // 拦截所有请求
-                .excludePathPatterns("/api/login", "/api/register", "/static/**", "/error"); // 放行接口
+                .excludePathPatterns("/api/user/login", "/api/user/register", "/static/**", "/error"); // 放行接口
     }
 
     // CORS  todo 上线换成nginx
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")  // 对哪些路径生效
-                .allowedOrigins("http://localhost:3000")  // 允许哪个前端访问
+                .allowedOrigins( "http://localhost:5173")  // 允许哪个前端访问
                 .allowedMethods("GET", "POST", "PUT", "DELETE")  // 允许的请求方式
                 .allowedHeaders("*")       // 允许携带的请求头
                 .allowCredentials(true);   // 允许携带 cookie

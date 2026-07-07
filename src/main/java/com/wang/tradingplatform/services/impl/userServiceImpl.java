@@ -37,7 +37,7 @@ public class userServiceImpl implements userService {
         // 构建用户对象
         User user = new User();
         // TODO: 密码目前明文存储
-        user.setUserId((int) snowflakeIdUtil.nextId());
+        user.setUserId( snowflakeIdUtil.nextId());
         user.setUserName(username);
         user.setAccount(account);
         user.setPassword(password);

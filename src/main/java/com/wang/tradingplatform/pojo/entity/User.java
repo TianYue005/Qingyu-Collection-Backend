@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class User {
     //用户ID
-    private Integer userId;
+    private Long userId;
     //用户名
     private String userName;
     //账号

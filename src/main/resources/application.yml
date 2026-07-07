@@ -5,9 +5,7 @@ spring:
     active: dev
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/trading_platform?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-    username: ${spring.datasource.username}
-    password: ${spring.datasource.password}
+    url: jdbc:mysql://localhost:3306/tradingplatfrom?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
 mybatis:
   configuration:
     map-underscore-to-camel-case: true # 开启下环线转驼峰命名
