@@ -35,6 +35,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
+        <!--TODO-->
         <!--        <dependency>-->
         <!--            <groupId>org.springframework.ai</groupId>-->
         <!--            <artifactId>spring-ai-starter-model-openai</artifactId>-->
@@ -107,6 +108,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <!--Page-Helper-->
+        <dependency>
+            <groupId>com.github.pagehelper</groupId>
+            <artifactId>pagehelper-spring-boot-starter</artifactId>
+            <version>4.1.0</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
     <dependencyManagement>

@@ -5,6 +5,7 @@ import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
 import com.wang.tradingplatform.pojo.vo.Result;
 import com.wang.tradingplatform.services.userService;
+import com.wang.tradingplatform.utils.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,7 @@ public class UserController {
             if (message.equals("信息有误") || message.equals("登陆失败，请检查账号或者密码")){
                 return Result.error(message);
             }
+            message=message+","+ userService.selectName(UserContext.getCurrentAccount());
             return Result.success(message);
         } catch (Exception e) {
             log.error("用户登录失败: {}", e.getMessage(), e);

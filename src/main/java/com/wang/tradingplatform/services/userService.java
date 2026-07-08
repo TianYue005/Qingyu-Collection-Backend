@@ -17,4 +17,8 @@ public interface userService {
      * @return
      */
     String login(LoginDTO loginDTO);
+    /**
+     * 查询用户名
+     */
+    String selectName(String string);
 }

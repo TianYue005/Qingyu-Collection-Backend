@@ -19,3 +19,10 @@ jwt:
   secret: ${jwt.secret}
   expiration: ${jwt.expiration}
   tokenTitle: Authorization
+pagehelper:
+  # 数据库方言，自动识别mysql
+  helperDialect: mysql
+  # 是否开启合理化分页：pageNum<=1 自动变为1，pageNum超过总页查最后一页
+  reasonable: true
+  # 支持通过pageSizeZero参数查询全部数据
+  pageSizeZero: false

@@ -25,4 +25,9 @@ public interface UserMapper {
      * 登录 传递密码和账号 能查到就可以登陆
      */
     Integer login(String account,String password);
+
+    /**
+     * 根据账号查找用户名字
+     */
+    String selectName(String string);
 }

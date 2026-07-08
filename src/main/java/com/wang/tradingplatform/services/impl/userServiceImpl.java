@@ -37,7 +37,7 @@ public class userServiceImpl implements userService {
         // 构建用户对象
         User user = new User();
         // TODO: 密码目前明文存储
-        user.setUserId( snowflakeIdUtil.nextId());
+        user.setUserId(snowflakeIdUtil.nextId());
         user.setUserName(username);
         user.setAccount(account);
         user.setPassword(password);
@@ -76,5 +76,10 @@ public class userServiceImpl implements userService {
         }
         //生成token,并返回
         return jwtTokenUtil.generateToken(loginDTO.getAccount());
+    }
+
+    @Override
+    public String selectName(String string) {
+        return userMapper.selectName(string);
     }
 }

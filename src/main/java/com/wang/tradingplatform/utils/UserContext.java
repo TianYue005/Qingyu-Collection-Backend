@@ -11,17 +11,6 @@ public class UserContext {
         CURRENT_USER.set(account);
     }
 
-    // 取出当前用户
-    public static String getCurrentUser() {
-        return CURRENT_USER.get();
-    }
-
-    // 便捷方法：直接获取用户账号
-    public static String getCurrentUserId() {
-        String user = CURRENT_USER.get();
-        return Objects.equals(user, "") ? null : user;
-    }
-
     // 请求结束后必须清理，防止内存泄漏
     public static void clear() {
         CURRENT_USER.remove();

@@ -1,7 +1,9 @@
 package com.wang.tradingplatform.services;
 
 import com.wang.tradingplatform.pojo.dto.UploadItemDTO;
-import com.wang.tradingplatform.pojo.entity.Items;
+import com.wang.tradingplatform.pojo.entity.Goods;
+import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
+import com.wang.tradingplatform.pojo.vo.PageResult;
 
 import java.util.List;
 
@@ -10,8 +12,10 @@ public interface itemsServices {
     Boolean add(UploadItemDTO uploadItemDTO);
 
     //根据ID查找商品
-    Items findById(Long id);
+    Goods findById(Long id);
 
-    //查找所有商品
-    List<Items> findAll();
+    //分页查找
+    PageResult<Goods> toPage(ItemQueryParam itemQueryParam);
+
+
 }

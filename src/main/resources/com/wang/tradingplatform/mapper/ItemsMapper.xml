@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wang.tradingplatform.mapper.ItemsMapper">
+    <insert id="insert" parameterType="com.wang.tradingplatform.pojo.entity.Goods">
+        INSERT INTO goods (goods_id, goods_desc, price, original_price, tags, is_deleted)
+        VALUES (#{goodsId}, #{goodsDesc}, #{price}, #{originalPrice}, #{tags}, #{isDeleted})
+    </insert>
+
+    <select id="selectById" parameterType="java.lang.Long" resultType="com.wang.tradingplatform.pojo.entity.Goods">
+        SELECT goods_id       AS goodsId,
+               goods_desc     AS goodsDesc,
+               price          AS price,
+               original_price AS originalPrice,
+               tags           AS tags,
+               is_deleted     AS isDeleted,
+               create_time    AS createTime,
+               update_time    AS updateTime
+        FROM goods
+        WHERE goods_id = #{id}
+    </select>
+
+    <select id="selectAll" resultType="com.wang.tradingplatform.pojo.entity.Goods">
+        SELECT goods_id       AS goodsId,
+               goods_desc     AS goodsDesc,
+               price          AS price,
+               original_price AS originalPrice,
+               tags           AS tags,
+               is_deleted     AS isDeleted,
+               create_time    AS createTime,
+               update_time    AS updateTime
+        FROM goods
+        WHERE is_deleted = 0
+        ORDER BY create_time DESC
+    </select>
+    <!--分页查询 商品-->
+    <select id="page" resultType="com.wang.tradingplatform.pojo.entity.Goods">
+
+    </select>
+</mapper>
