@@ -87,6 +87,7 @@ public class itemsServicesImpl implements itemsServices {
     //根据关键词查询相关商品信息
     @Override
     public PageResult<GoodsVO> selectByKeyword(String keyword) {
-        return itemsMapper.selectByKeyword(keyword);
+        List<GoodsVO> goodsList = itemsMapper.selectByKeyword(keyword);
+        return new PageResult<>((long) goodsList.size(), goodsList);
     }
 }

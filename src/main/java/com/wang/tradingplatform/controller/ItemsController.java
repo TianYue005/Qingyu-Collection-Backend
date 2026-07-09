@@ -55,8 +55,8 @@ public class ItemsController {
 
 
     @Operation(summary = "关键词查询")
-    @GetMapping("/select")
-    public Result<PageResult<GoodsVO>> selectByKeyword(String keyword) {
+    @GetMapping("/search")
+    public Result<PageResult<GoodsVO>> selectByKeyword(@RequestParam String keyword) {
         PageResult<GoodsVO> goods = itemServices.selectByKeyword(keyword);
         return Result.success(goods);
     }

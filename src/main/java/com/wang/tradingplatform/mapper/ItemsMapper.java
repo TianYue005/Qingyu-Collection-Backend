@@ -4,7 +4,6 @@ import com.wang.tradingplatform.pojo.entity.Goods;
 import com.wang.tradingplatform.pojo.entity.GoodsImage;
 import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
-import com.wang.tradingplatform.pojo.vo.PageResult;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,5 +31,5 @@ public interface ItemsMapper {
     GoodsVO findGoodsById(Long id);
 
     //根据关键词查询相关商品信息
-    PageResult<GoodsVO> selectByKeyword(String keyword);
+    List<GoodsVO> selectByKeyword(String keyword);
 }
