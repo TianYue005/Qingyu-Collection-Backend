@@ -14,13 +14,6 @@ public interface UserMapper {
      */
     int insert(User user);
 
-
-    /**
-     * 根据账号查找用户
-     */
-    @Select("SELECT * FROM user WHERE account = #{account} AND deleted = 0")
-    User findByAccount(@Param("account") String account);
-
     /**
      * 登录 传递密码和账号 能查到就可以登陆
      */
@@ -30,4 +23,12 @@ public interface UserMapper {
      * 根据账号查找用户名字
      */
     String selectName(String string);
+
+
+    /**
+     * 根据账号查询用户id
+     */
+    @Select("SELECT USER_ID FROM user WHERE account = #{account} AND deleted = 0")
+    Long findIDByAccount(@Param("account") String account);
+
 }

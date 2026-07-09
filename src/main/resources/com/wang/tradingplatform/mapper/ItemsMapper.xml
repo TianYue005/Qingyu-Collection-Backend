@@ -46,6 +46,7 @@
         <!-- goods表字段，别名g -->
         <id column="g_goods_id" property="goodsId"/>
         <result column="user_id" property="userId"/>
+        <result column="user_name" property="userName"/>
         <result column="goods_desc" property="goodsDesc"/>
         <result column="price" property="price"/>
         <result column="original_price" property="originalPrice"/>
@@ -53,29 +54,62 @@
 
         <!-- 一对多映射图片集合，ofType为图片实体 -->
         <collection property="imgList" ofType="com.wang.tradingplatform.pojo.entity.GoodsImage">
-            <id column="img_goods_id" property="goodsId"/>
+            <id column="img_id" property="id"/>
+            <result column="img_goods_id" property="goodsId"/>
             <result column="img_url" property="imgUrl"/>
             <result column="img_width" property="imgWidth"/>
             <result column="img_height" property="imgHeight"/>
+            <result column="img_create_time" property="createTime"/>
         </collection>
     </resultMap>
 
-    <!-- 查询未删除商品，附带所有图片 -->
+    <!-- 查询未删除商品，附带所有图片和用户名 -->
     <select id="page" resultMap="GoodsWithImageResultMap">
         SELECT
         g.goods_id AS g_goods_id,
         g.user_id,
+        u.user_name,
         g.goods_desc,
         g.price,
         g.original_price,
         g.tags,
+        gi.id AS img_id,
         gi.goods_id AS img_goods_id,
         gi.img_url,
         gi.img_width,
-        gi.img_height
+        gi.img_height,
+        gi.create_time AS img_create_time
         FROM goods g
-        LEFT JOIN goods_image gi
+        INNER JOIN goods_image gi
         ON g.goods_id = gi.goods_id
+        INNER JOIN user u
+        ON g.user_id = u.user_id
         WHERE g.is_deleted = 0
     </select>
+    <!--根据商品ID查询商品信息（含用户名和图片列表）-->
+    <select id="findGoodsById" resultMap="GoodsWithImageResultMap" parameterType="java.lang.Long">
+        SELECT
+        g.goods_id AS g_goods_id,
+        g.user_id,
+        u.user_name,
+        g.goods_desc,
+        g.price,
+        g.original_price,
+        g.tags,
+        gi.id AS img_id,
+        gi.goods_id AS img_goods_id,
+        gi.img_url,
+        gi.img_width,
+        gi.img_height,
+        gi.create_time AS img_create_time
+        FROM goods g
+        LEFT JOIN goods_image gi ON g.goods_id = gi.goods_id
+        LEFT JOIN user u ON g.user_id = u.user_id
+        WHERE g.goods_id = #{id} AND g.is_deleted = 0
+    </select>
+    <!--根据关键词查询相关商品信息-->
+    <select id="selectByKeyword" resultType="com.wang.tradingplatform.pojo.vo.GoodsVO" parameterType="java.lang.String">
+
+    </select>
+
 </mapper>

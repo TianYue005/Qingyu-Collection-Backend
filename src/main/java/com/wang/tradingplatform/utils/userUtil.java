@@ -3,7 +3,6 @@ package com.wang.tradingplatform.utils;
 import com.wang.tradingplatform.mapper.UserMapper;
 import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
-import com.wang.tradingplatform.pojo.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
@@ -23,9 +22,9 @@ public class userUtil {
         if (registerDTO.getAccount() == null || registerDTO.getAccount().trim().isEmpty()) {
             return false;
         }
-        //校验账户是否重复
-        User account = userMapper.findByAccount(registerDTO.getAccount());
-        if (account != null) {
+        //校验账户是否重复（根据账号查用户ID，查到即已存在）
+        Long userId = userMapper.findIDByAccount(registerDTO.getAccount());
+        if (userId != null) {
             return false;
         }
         // 校验密码

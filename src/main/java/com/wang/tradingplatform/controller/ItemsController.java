@@ -37,9 +37,9 @@ public class ItemsController {
     //根据ID查找商品
     @Operation(summary = "根据ID查找商品")
     @GetMapping("/{id}")
-    public Result<Goods> findById(@PathVariable Long id) {
+    public Result<GoodsVO> findById(@PathVariable Long id) {
         log.info("========== 查找商品, id: {} ==========", id);
-        Goods item = itemServices.findById(id);
+        GoodsVO item = itemServices.findGoodsById(id);
         if (item == null) {
             return Result.error("商品不存在");
         }
@@ -50,6 +50,14 @@ public class ItemsController {
     @GetMapping("/select")
     public Result<PageResult<GoodsVO>> selectToPage(ItemQueryParam itemQueryParam) {
         PageResult<GoodsVO> goods = itemServices.toPage(itemQueryParam);
+        return Result.success(goods);
+    }
+
+
+    @Operation(summary = "关键词查询")
+    @GetMapping("/select")
+    public Result<PageResult<GoodsVO>> selectByKeyword(String keyword) {
+        PageResult<GoodsVO> goods = itemServices.selectByKeyword(keyword);
         return Result.success(goods);
     }
 

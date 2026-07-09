@@ -3,6 +3,7 @@ package com.wang.tradingplatform.services.impl;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.wang.tradingplatform.mapper.ItemsMapper;
+import com.wang.tradingplatform.mapper.UserMapper;
 import com.wang.tradingplatform.pojo.dto.UploadItemDTO;
 import com.wang.tradingplatform.pojo.entity.Goods;
 import com.wang.tradingplatform.pojo.entity.GoodsImage;
@@ -12,6 +13,7 @@ import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
 import com.wang.tradingplatform.services.itemsServices;
 import com.wang.tradingplatform.utils.SnowflakeIdUtil;
+import com.wang.tradingplatform.utils.UserContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +23,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class itemsServicesImpl implements itemsServices {
-
+    private final UserMapper userMapper;
     private final ItemsMapper itemsMapper;
     private final SnowflakeIdUtil snowflakeIdUtil;
 
@@ -43,8 +45,8 @@ public class itemsServicesImpl implements itemsServices {
         //逻辑删除 0未删 1已删
         goods.setIsDeleted(0);
 
+        goods.setUserId(userMapper.findIDByAccount(UserContext.getCurrentAccount()));
         int rows = itemsMapper.insert(goods);
-
         //插入商品图片（含宽高）
         Picture[] images = uploadItemDTO.getImage();
         if (images != null) {
@@ -60,16 +62,6 @@ public class itemsServicesImpl implements itemsServices {
         return rows > 0;
     }
 
-    //通过ID查找图片
-    @Override
-    public Goods findById(Long id) {
-        Goods goods = itemsMapper.selectById(id);
-        if (goods != null) {
-            List<GoodsImage> images = itemsMapper.selectImagesByGoodsId(id);
-            goods.setImages(images);
-        }
-        return goods;
-    }
 
     //分页查找
     @Override
@@ -84,5 +76,17 @@ public class itemsServicesImpl implements itemsServices {
             //构造并返回分页结果对象，包含总记录数和当前页数据
             return new PageResult<GoodsVO>(page.getTotal(), goodsList);
         }
+    }
+
+    //根据商品ID查询商品信息
+    @Override
+    public GoodsVO findGoodsById(Long id) {
+        return itemsMapper.findGoodsById(id);
+    }
+
+    //根据关键词查询相关商品信息
+    @Override
+    public PageResult<GoodsVO> selectByKeyword(String keyword) {
+        return itemsMapper.selectByKeyword(keyword);
     }
 }

@@ -12,11 +12,12 @@ public interface itemsServices {
     //商品上架接口
     Boolean add(UploadItemDTO uploadItemDTO);
 
-    //根据ID查找商品
-    Goods findById(Long id);
-
     //分页查找
     PageResult<GoodsVO> toPage(ItemQueryParam itemQueryParam);
 
+    //根据ID查找商品
+    GoodsVO findGoodsById(Long id);
 
+    //根据关键词查询相关商品信息
+    PageResult<GoodsVO> selectByKeyword(String keyword);
 }
