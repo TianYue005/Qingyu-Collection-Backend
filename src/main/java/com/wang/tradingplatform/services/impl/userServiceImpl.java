@@ -46,7 +46,7 @@ public class userServiceImpl implements userService {
         user.setIntegral(100);                      // 初始活跃度100
         user.setCredit(80);                         // 初始信誉分80
         user.setLevel(1);                           // 初始等级1
-        user.setDeleted(false);                     // 未删除
+        user.setDeleted(0);                     // 未删除
         user.setAvatar("默认头像");
         // 插入数据库
         int rows = userMapper.insert(user);

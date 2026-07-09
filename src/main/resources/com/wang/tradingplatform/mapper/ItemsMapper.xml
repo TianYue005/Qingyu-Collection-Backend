@@ -4,38 +4,78 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wang.tradingplatform.mapper.ItemsMapper">
     <insert id="insert" parameterType="com.wang.tradingplatform.pojo.entity.Goods">
-        INSERT INTO goods (goods_id, goods_desc, price, original_price, tags, is_deleted)
-        VALUES (#{goodsId}, #{goodsDesc}, #{price}, #{originalPrice}, #{tags}, #{isDeleted})
+        INSERT INTO goods (goods_id, user_id, goods_desc, price, original_price, tags, is_deleted)
+        VALUES (#{goodsId}, #{userId}, #{goodsDesc}, #{price}, #{originalPrice}, #{tags}, #{isDeleted})
     </insert>
 
     <select id="selectById" parameterType="java.lang.Long" resultType="com.wang.tradingplatform.pojo.entity.Goods">
-        SELECT goods_id       AS goodsId,
-               goods_desc     AS goodsDesc,
-               price          AS price,
-               original_price AS originalPrice,
-               tags           AS tags,
-               is_deleted     AS isDeleted,
-               create_time    AS createTime,
-               update_time    AS updateTime
+        SELECT goods_id AS goodsId,
+        user_id AS userId,
+        goods_desc AS goodsDesc,
+        price AS price,
+        original_price AS originalPrice,
+        tags AS tags,
+        is_deleted AS isDeleted,
+        create_time AS createTime,
+        update_time AS updateTime
         FROM goods
         WHERE goods_id = #{id}
     </select>
 
-    <select id="selectAll" resultType="com.wang.tradingplatform.pojo.entity.Goods">
-        SELECT goods_id       AS goodsId,
-               goods_desc     AS goodsDesc,
-               price          AS price,
-               original_price AS originalPrice,
-               tags           AS tags,
-               is_deleted     AS isDeleted,
-               create_time    AS createTime,
-               update_time    AS updateTime
-        FROM goods
-        WHERE is_deleted = 0
-        ORDER BY create_time DESC
-    </select>
-    <!--分页查询 商品-->
-    <select id="page" resultType="com.wang.tradingplatform.pojo.entity.Goods">
+    <!-- 插入商品图片 -->
+    <insert id="insertImage" parameterType="com.wang.tradingplatform.pojo.entity.GoodsImage">
+        INSERT INTO goods_image (goods_id, img_url, img_width, img_height)
+        VALUES (#{goodsId}, #{imgUrl}, #{imgWidth}, #{imgHeight})
+    </insert>
 
+    <!-- 根据商品ID查询图片列表 -->
+    <select id="selectImagesByGoodsId" parameterType="java.lang.Long"
+            resultType="com.wang.tradingplatform.pojo.entity.GoodsImage">
+        SELECT id AS id,
+        goods_id AS goodsId,
+        img_url AS imgUrl,
+        img_width AS imgWidth,
+        img_height AS imgHeight,
+        create_time AS createTime
+        FROM goods_image
+        WHERE goods_id = #{goodsId}
+        ORDER BY id ASC
+    </select>
+    <!-- 自定义映射：商品 + 一对多图片 -->
+    <resultMap id="GoodsWithImageResultMap" type="com.wang.tradingplatform.pojo.vo.GoodsVO">
+        <!-- goods表字段，别名g -->
+        <id column="g_goods_id" property="goodsId"/>
+        <result column="user_id" property="userId"/>
+        <result column="goods_desc" property="goodsDesc"/>
+        <result column="price" property="price"/>
+        <result column="original_price" property="originalPrice"/>
+        <result column="tags" property="tags"/>
+
+        <!-- 一对多映射图片集合，ofType为图片实体 -->
+        <collection property="imgList" ofType="com.wang.tradingplatform.pojo.entity.GoodsImage">
+            <id column="img_goods_id" property="goodsId"/>
+            <result column="img_url" property="imgUrl"/>
+            <result column="img_width" property="imgWidth"/>
+            <result column="img_height" property="imgHeight"/>
+        </collection>
+    </resultMap>
+
+    <!-- 查询未删除商品，附带所有图片 -->
+    <select id="page" resultMap="GoodsWithImageResultMap">
+        SELECT
+        g.goods_id AS g_goods_id,
+        g.user_id,
+        g.goods_desc,
+        g.price,
+        g.original_price,
+        g.tags,
+        gi.goods_id AS img_goods_id,
+        gi.img_url,
+        gi.img_width,
+        gi.img_height
+        FROM goods g
+        LEFT JOIN goods_image gi
+        ON g.goods_id = gi.goods_id
+        WHERE g.is_deleted = 0
     </select>
 </mapper>

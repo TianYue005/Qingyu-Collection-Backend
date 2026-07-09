@@ -33,8 +33,8 @@ public class User {
     private Integer credit;
     //用户余额（金钱专用类型）
     private BigDecimal balance;
-    //逻辑删除
-    private Boolean deleted;
+    //逻辑删除 0未删 1已删
+    private Integer deleted;
     //用户头像
     private String avatar;
 }

@@ -6,12 +6,14 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class Goods {
     private Long goodsId;//商品id
+    private Long userId;//所属用户ID，关联用户表主键
     private String goodsDesc;//商品描述
     private BigDecimal price;//售卖价格
     private BigDecimal originalPrice;//原价
@@ -19,4 +21,5 @@ public class Goods {
     private Integer isDeleted;//逻辑删除 0未删 1已删
     private LocalDateTime createTime;//创建时间
     private LocalDateTime updateTime;//最后更新时间
+    private List<GoodsImage> images;//关联的图片列表
 }

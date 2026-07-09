@@ -3,6 +3,7 @@ package com.wang.tradingplatform.controller;
 import com.wang.tradingplatform.pojo.dto.UploadItemDTO;
 import com.wang.tradingplatform.pojo.entity.Goods;
 import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
+import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
 import com.wang.tradingplatform.pojo.vo.Result;
 import com.wang.tradingplatform.services.impl.itemsServicesImpl;
@@ -11,9 +12,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Objects;
 
 @Tag(name = "商品上架模块")
 @Slf4j
@@ -50,8 +48,8 @@ public class ItemsController {
 
     @Operation(summary = "分页查询")
     @GetMapping("/select")
-    public Result selectToPage(ItemQueryParam itemQueryParam) {
-        PageResult<Goods> goods = itemServices.toPage(itemQueryParam);
+    public Result<PageResult<GoodsVO>> selectToPage(ItemQueryParam itemQueryParam) {
+        PageResult<GoodsVO> goods = itemServices.toPage(itemQueryParam);
         return Result.success(goods);
     }
 
