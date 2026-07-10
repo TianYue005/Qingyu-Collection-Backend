@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wang.tradingplatform.mapper.FeedBackMapper">
+    <!--用户反馈-->
+    <insert id="addFeedBack">
+        INSERT INTO user_feedback (upload_account, suggest_type, suggest_content, problem_page, screenshot)
+        VALUES (#{uploadAccount}, #{suggestType}, #{suggestContent}, #{problemPage}, #{screenshot})
+    </insert>
+
+</mapper>
