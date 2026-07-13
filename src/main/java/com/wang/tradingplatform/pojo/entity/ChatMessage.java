@@ -18,7 +18,7 @@ public class ChatMessage {
     private Long groupId;
     //消息内容
     private String content;
-    //发送时间
+    //消息类型 1 字符串 2 url链接
     private Integer msgType;
     //发送时间
     private LocalDateTime sendTime;

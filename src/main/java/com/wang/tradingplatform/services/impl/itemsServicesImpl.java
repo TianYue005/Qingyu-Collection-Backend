@@ -90,4 +90,11 @@ public class itemsServicesImpl implements itemsServices {
         List<GoodsVO> goodsList = itemsMapper.selectByKeyword(keyword);
         return new PageResult<>((long) goodsList.size(), goodsList);
     }
+
+    //查找用户发布的商品 todo
+    @Override
+    public PageResult<GoodsVO> selectMyGoods() {
+        UserContext.getCurrentAccount();
+        return null;
+    }
 }

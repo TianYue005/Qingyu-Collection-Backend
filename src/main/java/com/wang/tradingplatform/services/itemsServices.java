@@ -20,4 +20,7 @@ public interface itemsServices {
 
     //根据关键词查询相关商品信息
     PageResult<GoodsVO> selectByKeyword(String keyword);
+
+    //查找用户发布的商品
+    PageResult<GoodsVO> selectMyGoods();
 }

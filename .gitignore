@@ -34,3 +34,4 @@ build/
 
 ### Data Files ###
 src/main/resources/data/
+/src/main/resources/application-dev.yml

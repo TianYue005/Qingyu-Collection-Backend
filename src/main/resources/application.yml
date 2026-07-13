@@ -7,6 +7,16 @@ spring:
     multipart:
       max-request-size: 5MB
       max-file-size: 5MB
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      password: # 无密码
+      database: 0 # 数据库库号
+      lettuce:
+        pool:
+          max-active: 8 # 最大连接数
+          max-idle: 8 # 最大空闲连接数
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/tradingplatform?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
@@ -28,3 +38,4 @@ pagehelper:
   pageSizeZero: false
 task:
   daily-four-cron: 0 0 4 * * ?
+

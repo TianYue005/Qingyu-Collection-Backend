@@ -61,4 +61,10 @@ public class ItemsController {
         return Result.success(goods);
     }
 
+    @Operation(summary = "查询用户发布的商品")
+    @GetMapping("/myItems")
+    public Result<PageResult<GoodsVO>> myItems(){
+        PageResult<GoodsVO> goods = itemServices.selectMyGoods();
+        return Result.success(goods);
+    }
 }
