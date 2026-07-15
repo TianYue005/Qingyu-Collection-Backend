@@ -35,12 +35,12 @@ public class JwtTokenUtil {
     }
 
     //根据用户信息生成token
-    public String generateToken(String userAccount) {
+    public String generateToken(Long userId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
-                .setSubject(userAccount)
+                .setSubject(String.valueOf(userId))
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(secretKey)
@@ -48,8 +48,8 @@ public class JwtTokenUtil {
     }
 
 
-    // 从token中获取用户账号
-    public String getUserAccountFromToken(String token) {
+    // 从token中获取用户ID
+    public String getUserIdFromToken(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(secretKey)
                 .build()
@@ -59,9 +59,9 @@ public class JwtTokenUtil {
     }
 
     // 校验token是否正确且没过期
-    public boolean validateToken(String token, String userAccount) {
-        String username = getUserAccountFromToken(token);
-        return username.equals(userAccount) && !isTokenExpired(token);
+    public boolean validateToken(String token, Long userId) {
+        String username = getUserIdFromToken(token);
+        return username.equals(String.valueOf(userId)) && !isTokenExpired(token);
     }
 
     // 判断token是否过期

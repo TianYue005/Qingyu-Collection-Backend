@@ -5,6 +5,7 @@ import com.wang.tradingplatform.pojo.entity.Goods;
 import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
+import com.wang.tradingplatform.utils.UserContext;
 
 import java.util.List;
 

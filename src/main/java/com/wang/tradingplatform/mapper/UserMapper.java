@@ -4,7 +4,6 @@ import com.wang.tradingplatform.pojo.entity.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
-import org.jspecify.annotations.NonNull;
 
 @Mapper
 public interface UserMapper {
@@ -31,4 +30,10 @@ public interface UserMapper {
     @Select("SELECT USER_ID FROM user WHERE account = #{account} AND deleted = 0")
     Long findIDByAccount(@Param("account") String account);
 
+    /**
+     * 根据用户id查询账号和名字
+     * @param userId
+     * @return
+     */
+    String selectAccountAndName(Long userId);
 }

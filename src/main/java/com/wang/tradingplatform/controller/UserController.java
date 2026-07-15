@@ -41,11 +41,11 @@ public class UserController {
         log.info("登录用户名: {}", loginDTO.getAccount());
 
         try {
+            //message存储的是 token
             String message = userService.login(loginDTO);
-            if (message.equals("信息有误") || message.equals("登陆失败，请检查账号或者密码")){
+            if (message.equals("信息有误") || message.equals("登陆失败，请检查账号或者密码")) {
                 return Result.error(message);
             }
-            message=message+","+ userService.selectName(loginDTO.getAccount());
             return Result.success(message);
         } catch (Exception e) {
             log.error("用户登录失败: {}", e.getMessage(), e);

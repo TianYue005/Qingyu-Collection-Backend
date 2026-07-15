@@ -1,14 +1,16 @@
 package com.wang.tradingplatform.utils;
 
-
-import java.util.Objects;
-
 public class UserContext {
-    private static final ThreadLocal<String> CURRENT_USER = new ThreadLocal<>();
+    private static final ThreadLocal<Long> CURRENT_USER = new ThreadLocal<>();
 
-    // 存入当前用户账号
-    public static void setCurrentUser(String account) {
-        CURRENT_USER.set(account);
+    // 存入当前用户Id
+    public static void setCurrentUserId(Long Id) {
+        CURRENT_USER.set(Id);
+    }
+
+    //取出当前用户Id
+    public static Long getCurrentUserId() {
+        return CURRENT_USER.get();
     }
 
     // 请求结束后必须清理，防止内存泄漏
@@ -16,16 +18,4 @@ public class UserContext {
         CURRENT_USER.remove();
     }
 
-    /**
-     * 便捷方法：直接获取当前用户账号（唯一标识）
-     *
-     * @return 当前用户账号，未登录时返回 null
-     */
-    public static String getCurrentAccount() {
-        String account = CURRENT_USER.get();
-        if (account == null || account.isEmpty()) {
-            throw new RuntimeException("服务器错误：未正常拿到用户账号信息");
-        }
-        return account;
-    }
 }

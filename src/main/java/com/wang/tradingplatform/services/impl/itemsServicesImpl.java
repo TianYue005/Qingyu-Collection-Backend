@@ -44,8 +44,7 @@ public class itemsServicesImpl implements itemsServices {
         goods.setTags(uploadItemDTO.getSpecs() != null ? String.join(",", uploadItemDTO.getSpecs()) : "");
         //逻辑删除 0未删 1已删
         goods.setIsDeleted(0);
-
-        goods.setUserId(userMapper.findIDByAccount(UserContext.getCurrentAccount()));
+        goods.setUserId(UserContext.getCurrentUserId());
         int rows = itemsMapper.insert(goods);
         //插入商品图片（含宽高）
         Picture[] images = uploadItemDTO.getImage();
@@ -91,10 +90,10 @@ public class itemsServicesImpl implements itemsServices {
         return new PageResult<>((long) goodsList.size(), goodsList);
     }
 
-    //查找用户发布的商品 todo
+    //查找用户发布的商品
     @Override
     public PageResult<GoodsVO> selectMyGoods() {
-        UserContext.getCurrentAccount();
-        return null;
+        List<GoodsVO> goodsList = itemsMapper.selectById(UserContext.getCurrentUserId());
+        return new PageResult<>((long) goodsList.size(), goodsList);
     }
 }

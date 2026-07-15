@@ -75,11 +75,24 @@ public class userServiceImpl implements userService {
             return "登陆失败，请检查账号或者密码";
         }
         //生成token,并返回
-        return jwtTokenUtil.generateToken(loginDTO.getAccount());
+        return jwtTokenUtil.generateToken(userMapper.findIDByAccount(loginDTO.getAccount()));
     }
 
+    //根据用户账号查找对应的用户名
     @Override
-    public String selectName(String string) {
-        return userMapper.selectName(string);
+    public String selectName(String account) {
+        return userMapper.selectName(account);
+    }
+
+    //根据用户账号查询用户Id
+    @Override
+    public Long selectId(String account) {
+        return userMapper.findIDByAccount(account);
+    }
+
+    //根据用户Id查询对应的用户名与账号
+    @Override
+    public String selectAccountAndName(Long userId) {
+        return userMapper.selectAccountAndName(userId);
     }
 }

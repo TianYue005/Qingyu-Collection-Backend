@@ -16,7 +16,7 @@ public interface ItemsMapper {
     int insert(Goods items);
 
     //根据ID查找商品
-    Goods selectById(Long id);
+    List<GoodsVO> selectById(Long id);
 
     //分页查询
     List<GoodsVO> page(ItemQueryParam itemQueryParam);
@@ -32,4 +32,7 @@ public interface ItemsMapper {
 
     //根据关键词查询相关商品信息
     List<GoodsVO> selectByKeyword(String keyword);
+
+    //查找用户发布的商品
+
 }

@@ -43,10 +43,8 @@ public class Interceptor implements HandlerInterceptor {
         }
 
         try {
-            // 从 token 中获取用户账号
-            String userAccount = jwtTokenUtil.getUserAccountFromToken(token);
-            // 将用户信息存入 ThreadLocal
-            UserContext.setCurrentUser(userAccount);
+            // 从 token 中获取用户ID 并设置到 UserContext 中
+            UserContext.setCurrentUserId(Long.valueOf(jwtTokenUtil.getUserIdFromToken(token)));
             return true;
         } catch (Exception e) {
             response.setStatus(401);

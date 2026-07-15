@@ -17,4 +17,8 @@
     <select id="selectName" resultType="java.lang.String">
         SELECT user_name FROM user WHERE account = #{string} AND deleted = 0
     </select>
+    <!--根据用户Id查询用户账号与用户名-->
+    <select id="selectAccountAndName" resultType="java.lang.String">
+        SELECT account, user_name FROM user WHERE user_id = #{userId} AND deleted = 0
+    </select>
 </mapper>

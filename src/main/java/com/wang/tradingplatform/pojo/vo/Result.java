@@ -35,7 +35,7 @@ public class Result<T> implements Serializable {
 
     //失败，并返回错误信息
     public static <T> Result<T> error(String msg) {
-        Result result = new Result();
+        Result<T> result = new Result<T>();
         result.msg = msg;
         result.code = 0;
         return result;

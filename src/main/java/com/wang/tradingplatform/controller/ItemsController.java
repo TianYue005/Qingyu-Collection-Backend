@@ -49,6 +49,7 @@ public class ItemsController {
     @Operation(summary = "分页查询")
     @GetMapping("/select")
     public Result<PageResult<GoodsVO>> selectToPage(ItemQueryParam itemQueryParam) {
+        log.info("========== 分页查询 ==========");
         PageResult<GoodsVO> goods = itemServices.toPage(itemQueryParam);
         return Result.success(goods);
     }
@@ -57,13 +58,15 @@ public class ItemsController {
     @Operation(summary = "关键词查询")
     @GetMapping("/search")
     public Result<PageResult<GoodsVO>> selectByKeyword(@RequestParam String keyword) {
+        log.info("========== 关键词查询 ==========");
         PageResult<GoodsVO> goods = itemServices.selectByKeyword(keyword);
         return Result.success(goods);
     }
 
     @Operation(summary = "查询用户发布的商品")
     @GetMapping("/myItems")
-    public Result<PageResult<GoodsVO>> myItems(){
+    public Result<PageResult<GoodsVO>> myItems() {
+        log.info("========== 查询用户发布的商品 ==========");
         PageResult<GoodsVO> goods = itemServices.selectMyGoods();
         return Result.success(goods);
     }
