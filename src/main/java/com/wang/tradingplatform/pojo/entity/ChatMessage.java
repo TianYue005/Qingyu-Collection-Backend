@@ -10,15 +10,15 @@ public class ChatMessage {
     private Long id;
     //会话id
     private String sessionId;
-    //发送人uid
+    //发送人uid #
     private Long fromUid;
-    //接收用户id，群聊为0
+    //接收用户id，群聊为0  #
     private Long toUid;
-    //群id，私聊为0
+    //群id，私聊为0 #
     private Long groupId;
-    //消息内容
+    //消息内容 #
     private String content;
-    //消息类型 1 字符串 2 url链接
+    //消息类型 1 字符串 2 url链接 #
     private Integer msgType;
     //发送时间
     private LocalDateTime sendTime;

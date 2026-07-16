@@ -2,6 +2,7 @@ package com.wang.tradingplatform.services;
 
 import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
+import com.wang.tradingplatform.pojo.entity.User;
 
 public interface userService {
     /**
@@ -30,6 +31,8 @@ public interface userService {
      */
     Long selectId(String account);
 
-    //根据用户Id查询对应的用户名与账号
-    String selectAccountAndName(Long userId);
+    /**
+     * 根据用户Id查询对应的用户名与账号
+     */
+    User selectAccountAndName(Long userId);
 }

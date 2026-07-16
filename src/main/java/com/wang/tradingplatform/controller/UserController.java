@@ -3,17 +3,14 @@ package com.wang.tradingplatform.controller;
 
 import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
+import com.wang.tradingplatform.pojo.entity.User;
 import com.wang.tradingplatform.pojo.vo.Result;
 import com.wang.tradingplatform.services.userService;
-import com.wang.tradingplatform.utils.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "用户模块")
 @Slf4j
@@ -24,6 +21,11 @@ public class UserController {
     @Autowired
     private userService userService;
 
+    /**
+     * 用户注册
+     * @param registerDTO
+     * @return
+     */
     @Operation(summary = "用户注册")
     @PostMapping("/register")
     public Result<String> register(@RequestBody RegisterDTO registerDTO) {
@@ -34,6 +36,11 @@ public class UserController {
         return Result.error(msg);
     }
 
+    /**
+     * 用户登录
+     * @param loginDTO
+     * @return
+     */
     @Operation(summary = "用户登录")
     @PostMapping("/login")
     public Result<String> login(@RequestBody LoginDTO loginDTO) {
@@ -51,5 +58,17 @@ public class UserController {
             log.error("用户登录失败: {}", e.getMessage(), e);
             return Result.error(e.getMessage());
         }
+    }
+
+    /**
+     * 得到用户的用户名与账号
+     * @param id
+     * @return
+     */
+    @Operation(summary = "得到用户的用户名与账号")
+    @PostMapping("/info/{id}")
+    public Result<User> info(@PathVariable Long id) {
+        log.info("========== 获取用户信息 ==========");
+        return Result.success(userService.selectAccountAndName(id));
     }
 }

@@ -85,10 +85,10 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
                                                       @NonNull WebSocketHandler wsHandler,
                                                       @NonNull Map<String, Object> attributes) {
                         // 从刚才在 Interceptor 中存入的 attributes 里取出 userId
-                        Long userId = (Long) attributes.get("userId");
+                        String userId = attributes.get("userId").toString();
                         if (userId != null) {
                             // 将 userId 作为 Principal 的唯一标识返回
-                            return new StompUserPrincipal(String.valueOf(userId));
+                            return new StompUserPrincipal(userId);
                         }
                         return null;
                     }

@@ -35,5 +35,5 @@ public interface UserMapper {
      * @param userId
      * @return
      */
-    String selectAccountAndName(Long userId);
+    User selectAccountAndName(Long userId);
 }

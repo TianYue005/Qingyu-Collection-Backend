@@ -25,6 +25,11 @@ public class userServiceImpl implements userService {
     private final userUtil userUtil;
     private final SnowflakeIdUtil snowflakeIdUtil;
 
+    /**
+     * 注册功能
+     * @param registerDTO 注册请求参数
+     * @return
+     */
     @Override
     public String register(RegisterDTO registerDTO) {
         String username = registerDTO.getUsername(); // 用户名
@@ -36,10 +41,10 @@ public class userServiceImpl implements userService {
         }
         // 构建用户对象
         User user = new User();
-        // TODO: 密码目前明文存储
         user.setUserId(snowflakeIdUtil.nextId());
         user.setUserName(username);
         user.setAccount(account);
+        // TODO: 密码目前明文存储
         user.setPassword(password);
         user.setStatus(1);                          // 1-正常
         user.setBalance(BigDecimal.ZERO);           // 初始余额0
@@ -78,21 +83,33 @@ public class userServiceImpl implements userService {
         return jwtTokenUtil.generateToken(userMapper.findIDByAccount(loginDTO.getAccount()));
     }
 
-    //根据用户账号查找对应的用户名
+    /**
+     * 根据用户账号查找对应的用户名
+     * @param account
+     * @return
+     */
     @Override
     public String selectName(String account) {
         return userMapper.selectName(account);
     }
 
-    //根据用户账号查询用户Id
+    /**
+     * 根据用户账号查询用户Id
+     * @param account
+     * @return
+     */
     @Override
     public Long selectId(String account) {
         return userMapper.findIDByAccount(account);
     }
 
-    //根据用户Id查询对应的用户名与账号
+    /**
+     * 根据用户Id查询对应的用户名与账号
+     * @param userId
+     * @return
+     */
     @Override
-    public String selectAccountAndName(Long userId) {
+    public User selectAccountAndName(Long userId) {
         return userMapper.selectAccountAndName(userId);
     }
 }
