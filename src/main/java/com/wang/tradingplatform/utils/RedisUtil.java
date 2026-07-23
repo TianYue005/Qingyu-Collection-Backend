@@ -84,9 +84,11 @@ public class RedisUtil {
     }
 
     // ===================== ZSet 有序集合 =====================
+    // 添加
     public void zAdd(String key, Object value, double score) {
         redisTemplate.opsForZSet().add(key, value, score);
     }
+    // 范围查询
     public Set<Object> zRange(String key, long start, long end) {
         return redisTemplate.opsForZSet().range(key, start, end);
     }

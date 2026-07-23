@@ -3,6 +3,10 @@ package com.wang.tradingplatform.services;
 import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
 import com.wang.tradingplatform.pojo.entity.User;
+import com.wang.tradingplatform.pojo.vo.ChatListVO;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 public interface userService {
     /**
@@ -35,4 +39,31 @@ public interface userService {
      * 根据用户Id查询对应的用户名与账号
      */
     User selectAccountAndName(Long userId);
+
+    /**
+     * 返回用户聊天列表
+     *
+     * @return
+     */
+    List<ChatListVO> selectChatList();
+
+    /**
+     * 根据传递的sessionId获取历史消息
+     * @param id
+     * @return
+     */
+    List<ChatListVO> selectHistory(@Param("id") Long id);
+
+    /**
+     * 添加收藏功能
+     * @param id
+     * @return
+     */
+    int favourite(Long id);
+
+    /**
+     * 查看收藏功能
+     * @return
+     */
+    List<Long> selectFavourite();
 }

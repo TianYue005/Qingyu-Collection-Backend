@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wang.tradingplatform.mapper.ChatMessageMapper">
+    <!--插入消息-->
+    <insert id="insert">
+        INSERT INTO chat_message (id, session_id, from_uid, to_uid, group_id, content, msg_type, send_time, is_read)
+        VALUES (#{id}, #{sessionId}, #{fromUid}, #{toUid}, #{groupId}, #{content}, #{msgType}, #{sendTime}, #{isRead})
+    </insert>
+
+    <select id="selectGroupHistory" resultType="com.wang.tradingplatform.pojo.entity.ChatMessage">
+        SELECT id, session_id, from_uid, to_uid, group_id, content, msg_type, send_time, is_read
+        FROM chat_message
+        WHERE group_id = #{groupId}
+        ORDER BY send_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectPrivateHistory" resultType="com.wang.tradingplatform.pojo.entity.ChatMessage">
+        SELECT id, session_id, from_uid, to_uid, group_id, content, msg_type, send_time, is_read
+        FROM chat_message
+        WHERE group_id = 0
+          AND ((from_uid = #{userId1} AND to_uid = #{userId2})
+               OR (from_uid = #{userId2} AND to_uid = #{userId1}))
+        ORDER BY send_time DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

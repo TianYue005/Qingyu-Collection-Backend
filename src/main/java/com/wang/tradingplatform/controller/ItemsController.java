@@ -46,6 +46,7 @@ public class ItemsController {
         return Result.success(item);
     }
 
+    //分页查询
     @Operation(summary = "分页查询")
     @GetMapping("/select")
     public Result<PageResult<GoodsVO>> selectToPage(ItemQueryParam itemQueryParam) {
@@ -54,7 +55,7 @@ public class ItemsController {
         return Result.success(goods);
     }
 
-
+    //关键词查询
     @Operation(summary = "关键词查询")
     @GetMapping("/search")
     public Result<PageResult<GoodsVO>> selectByKeyword(@RequestParam String keyword) {
@@ -63,6 +64,7 @@ public class ItemsController {
         return Result.success(goods);
     }
 
+    //查询用户发布的商品
     @Operation(summary = "查询用户发布的商品")
     @GetMapping("/myItems")
     public Result<PageResult<GoodsVO>> myItems() {

@@ -1,20 +1,20 @@
 package com.wang.tradingplatform.services.impl;
 
+import com.wang.tradingplatform.annotation.Permission;
 import com.wang.tradingplatform.mapper.UserMapper;
 import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
 import com.wang.tradingplatform.pojo.entity.User;
+import com.wang.tradingplatform.pojo.vo.ChatListVO;
 import com.wang.tradingplatform.services.userService;
-import com.wang.tradingplatform.utils.JwtTokenUtil;
-import com.wang.tradingplatform.utils.SnowflakeIdUtil;
-import com.wang.tradingplatform.utils.userUtil;
+import com.wang.tradingplatform.utils.*;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.util.Collections;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -24,9 +24,11 @@ public class userServiceImpl implements userService {
     private final UserMapper userMapper;
     private final userUtil userUtil;
     private final SnowflakeIdUtil snowflakeIdUtil;
+    private final RedisUtil redisUtil;
 
     /**
      * 注册功能
+     *
      * @param registerDTO 注册请求参数
      * @return
      */
@@ -80,36 +82,103 @@ public class userServiceImpl implements userService {
             return "登陆失败，请检查账号或者密码";
         }
         //生成token,并返回
-        return jwtTokenUtil.generateToken(userMapper.findIDByAccount(loginDTO.getAccount()));
+        Long uId = userMapper.findIDByAccount(loginDTO.getAccount());
+        String token = jwtTokenUtil.generateToken(uId);
+        redisUtil.set(String.valueOf(uId), token);//向redis中存储用户的token
+        return token;
     }
 
     /**
      * 根据用户账号查找对应的用户名
+     *
      * @param account
      * @return
      */
     @Override
+    @Permission
     public String selectName(String account) {
         return userMapper.selectName(account);
     }
 
     /**
      * 根据用户账号查询用户Id
+     *
      * @param account
      * @return
      */
     @Override
+    @Permission
     public Long selectId(String account) {
         return userMapper.findIDByAccount(account);
     }
 
     /**
      * 根据用户Id查询对应的用户名与账号
+     *
      * @param userId
      * @return
      */
     @Override
+    @Permission
     public User selectAccountAndName(Long userId) {
         return userMapper.selectAccountAndName(userId);
+    }
+
+
+    /**
+     * 查找用户的聊天列表
+     *
+     * @return 要么返回一个空集合，要么就是会话列表信息
+     */
+    @Override
+    @Permission
+    public List<ChatListVO> selectChatList() {
+        //得到了用户的聊天列表（即各个会话的sessionId列表）
+        List<Long> sessionIdList = userMapper.selectUserSessionList(UserContext.getCurrentUserId());
+        //根据用户的聊天列表查到具体的session对话
+        return sessionIdList.isEmpty() ? Collections.emptyList() : userMapper.selectUserChatList(sessionIdList);
+    }
+
+    /**
+     * 根据传递的sessionId获取历史消息
+     *
+     * @param id
+     * @return
+     */
+    @Override
+    @Permission
+    public List<ChatListVO> selectHistory(Long id) {
+        //查找该用户的所有有关联的sessionId
+        List<Long> sessionIdList = userMapper.selectUserSessionList(UserContext.getCurrentUserId());
+        //判断传递的sessionId是否真的属于该用户
+        if (sessionIdList.contains(id)) {
+            //该用户传递的sessionId确实是该用户的
+            return userMapper.selectUserChatList(List.of(id));
+        }
+        //根据结果返回信息
+        return List.of();
+    }
+
+    /**
+     * 添加收藏功能
+     *
+     * @param id
+     * @return
+     */
+    @Override
+    @Permission
+    public int favourite(Long id) {
+        return userMapper.addFavourite(UserContext.getCurrentUserId(), id);
+    }
+
+    /**
+     * 查看收藏功能
+     *
+     * @return
+     */
+    @Override
+    @Permission
+    public List<Long> selectFavourite() {
+        return userMapper.selectFavourite(UserContext.getCurrentUserId());
     }
 }

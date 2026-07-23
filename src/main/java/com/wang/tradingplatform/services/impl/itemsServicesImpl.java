@@ -2,6 +2,7 @@ package com.wang.tradingplatform.services.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.wang.tradingplatform.annotation.Permission;
 import com.wang.tradingplatform.mapper.ItemsMapper;
 import com.wang.tradingplatform.mapper.UserMapper;
 import com.wang.tradingplatform.pojo.dto.UploadItemDTO;
@@ -29,6 +30,7 @@ public class itemsServicesImpl implements itemsServices {
 
     //添加商品
     @Override
+    @Permission
     @Transactional
     public Boolean add(UploadItemDTO uploadItemDTO) {
         Goods goods = new Goods();
@@ -64,6 +66,7 @@ public class itemsServicesImpl implements itemsServices {
 
     //分页查找
     @Override
+    @Permission
     public PageResult<GoodsVO> toPage(ItemQueryParam itemQueryParam) {
         //使用PageHelper进行分页处理（try-with-resources确保ThreadLocal资源被清理）
         try (Page<Goods> page = PageHelper.startPage(
@@ -71,7 +74,7 @@ public class itemsServicesImpl implements itemsServices {
                 itemQueryParam.getPageSize(),
                 itemQueryParam.getSortRules())) {
             //调用mapper接口执行查询 查到的数据是没有图片的
-            List<GoodsVO> goodsList = itemsMapper.page(itemQueryParam);
+            List<GoodsVO> goodsList = itemsMapper.page(itemQueryParam,UserContext.getCurrentUserId());
             //构造并返回分页结果对象，包含总记录数和当前页数据
             return new PageResult<GoodsVO>(page.getTotal(), goodsList);
         }
@@ -79,21 +82,24 @@ public class itemsServicesImpl implements itemsServices {
 
     //根据商品ID查询商品信息
     @Override
+    @Permission
     public GoodsVO findGoodsById(Long id) {
         return itemsMapper.findGoodsById(id);
     }
 
     //根据关键词查询相关商品信息
     @Override
+    @Permission
     public PageResult<GoodsVO> selectByKeyword(String keyword) {
-        List<GoodsVO> goodsList = itemsMapper.selectByKeyword(keyword);
+        List<GoodsVO> goodsList = itemsMapper.selectByKeyword(keyword,UserContext.getCurrentUserId());
         return new PageResult<>((long) goodsList.size(), goodsList);
     }
 
     //查找用户发布的商品
     @Override
+    @Permission
     public PageResult<GoodsVO> selectMyGoods() {
-        List<GoodsVO> goodsList = itemsMapper.selectById(UserContext.getCurrentUserId());
+        List<GoodsVO> goodsList = itemsMapper.selectByUserId(UserContext.getCurrentUserId());
         return new PageResult<>((long) goodsList.size(), goodsList);
     }
 }

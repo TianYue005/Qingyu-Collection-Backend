@@ -12,5 +12,4 @@ public class LoginDTO {
     private String username;
     //用户Id
     private Long userId;
-
 }

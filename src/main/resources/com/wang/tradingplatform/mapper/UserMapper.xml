@@ -11,6 +11,10 @@
         #{level},
         #{avatar}, #{deleted})
     </insert>
+    <!--添加收藏功能-->
+    <insert id="addFavourite">
+        insert into favourite (user_id, item_id) values (#{userId},#{itemId})
+    </insert>
     <!--登录-->
     <select id="login" resultType="java.lang.Integer">
         select count(*) from user where account = #{account} and password = #{password} and deleted = 0
@@ -22,6 +26,33 @@
     <!--根据用户id查询账号和名字-->
     <select id="selectAccountAndName" resultType="com.wang.tradingplatform.pojo.entity.User">
         SELECT user_name,account FROM user WHERE user_id = #{userId} AND deleted = 0
+    </select>
+    <!--查找用户的聊天列表  session的id列表-->
+    <select id="selectUserSessionList" resultType="java.lang.Long">
+        select session_id from session_user where u_id=#{currentUserId}
+    </select>
+    <!--根据session的id列表查找对应的聊天信息 并返回列表数据-->
+    <select id="selectUserChatList" resultType="com.wang.tradingplatform.pojo.vo.ChatListVO">
+        select
+        id,
+        session_id,
+        from_uid,
+        to_uid,
+        avatar,
+        title,
+        send_time,
+        nick_name,
+        content
+        from conversation
+        where session_id in
+        <foreach collection="sessionId" separator="," open="(" close=")" item="sid">
+            #{sid}
+        </foreach>
+        order by send_time desc
+    </select>
+    <!--查看收藏功能-->
+    <select id="selectFavourite" resultType="java.lang.Long">
+        select item_id from favourite where user_id = #{userId}
     </select>
 
 </mapper>

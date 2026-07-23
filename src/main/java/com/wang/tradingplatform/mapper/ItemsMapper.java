@@ -15,11 +15,11 @@ public interface ItemsMapper {
     //上架商品
     int insert(Goods items);
 
-    //根据ID查找商品
+    //根据商品ID查找商品
     List<GoodsVO> selectById(Long id);
 
     //分页查询
-    List<GoodsVO> page(ItemQueryParam itemQueryParam);
+    List<GoodsVO> page(ItemQueryParam itemQueryParam,Long userId);
 
     //插入商品图片
     int insertImage(GoodsImage goodsImage);
@@ -31,8 +31,10 @@ public interface ItemsMapper {
     GoodsVO findGoodsById(Long id);
 
     //根据关键词查询相关商品信息
-    List<GoodsVO> selectByKeyword(String keyword);
+    List<GoodsVO> selectByKeyword(String keyword,Long userId);
 
-    //查找用户发布的商品
+    //根据用户id查找用户发布的商品
+    List<GoodsVO> selectByUserId(Long currentUserId);
+
 
 }

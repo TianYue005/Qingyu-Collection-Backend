@@ -40,5 +40,11 @@ public class Result<T> implements Serializable {
         result.code = 0;
         return result;
     }
+    //需要重回新登录
+    public static <T> Result<T> error() {
+        Result<T> result = new Result<T>();
+        result.code=401;
+        return result;
+    }
 
 }

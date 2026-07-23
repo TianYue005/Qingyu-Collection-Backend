@@ -1,5 +1,6 @@
 package com.wang.tradingplatform.services.impl;
 
+import com.wang.tradingplatform.annotation.Permission;
 import com.wang.tradingplatform.mapper.FeedBackMapper;
 import com.wang.tradingplatform.pojo.entity.UserFeedback;
 import com.wang.tradingplatform.services.UserFeedBackService;
@@ -15,6 +16,7 @@ public class UserFeedBackServiceImpl implements UserFeedBackService {
 
     //用户提交反馈
     @Override
+    @Permission
     public Boolean addFeedBack(UserFeedback feedback) {
         try {
             int rows = feedBackMapper.addFeedBack(feedback);

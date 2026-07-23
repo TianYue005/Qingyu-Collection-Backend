@@ -94,6 +94,7 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     }
                 })
                 .withSockJS(); // 兼容低版本浏览器，降级轮询
+                //设置过attributes还要设置Principal是因为一开始是http协议要换位websocket协议
     }
 
     // 配置消息代理
@@ -101,11 +102,13 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         // 全局客户端接收消息的前缀
         registry.enableStompBrokerRelay("/topic", "/queue")
-                .setRelayHost("192.168.72.128")// RabbitMQ的IP
-                .setRelayPort(61613) // STOMP 插件默认端口
-                .setClientLogin("admin")//RabbitMQ的账号
-                .setClientPasscode("password");//RabbitMQ的密码
-
+                .setRelayHost("192.168.72.128")
+                .setRelayPort(61613)
+                .setClientLogin("admin")
+                .setClientPasscode("123456")
+                .setSystemLogin("admin")
+                .setSystemPasscode("123456")
+                .setVirtualHost("/");
         // 客户端发送消息到服务端的接口前缀
         registry.setApplicationDestinationPrefixes("/app");
         // 点对点消息的用户前缀，convertAndSendToUser 会路由到 /user/{username}/...

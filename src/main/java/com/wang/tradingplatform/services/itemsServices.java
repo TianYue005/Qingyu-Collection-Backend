@@ -1,13 +1,9 @@
 package com.wang.tradingplatform.services;
 
 import com.wang.tradingplatform.pojo.dto.UploadItemDTO;
-import com.wang.tradingplatform.pojo.entity.Goods;
 import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
-import com.wang.tradingplatform.utils.UserContext;
-
-import java.util.List;
 
 public interface itemsServices {
     //商品上架接口

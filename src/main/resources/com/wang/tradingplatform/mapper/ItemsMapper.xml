@@ -8,21 +8,22 @@
         VALUES (#{goodsId}, #{userId}, #{goodsDesc}, #{price}, #{originalPrice}, #{tags}, #{isDeleted})
     </insert>
 
+    <!--根据商品ID查找商品-->
     <select id="selectById" parameterType="java.lang.Long" resultMap="GoodsWithImageResultMap">
         SELECT
-            g.goods_id AS g_goods_id,
-            g.user_id,
-            u.user_name,
-            g.goods_desc,
-            g.price,
-            g.original_price,
-            g.tags,
-            gi.id AS img_id,
-            gi.goods_id AS img_goods_id,
-            gi.img_url,
-            gi.img_width,
-            gi.img_height,
-            gi.create_time AS img_create_time
+        g.goods_id AS g_goods_id,
+        g.user_id,
+        u.user_name,
+        g.goods_desc,
+        g.price,
+        g.original_price,
+        g.tags,
+        gi.id AS img_id,
+        gi.goods_id AS img_goods_id,
+        gi.img_url,
+        gi.img_width,
+        gi.img_height,
+        gi.create_time AS img_create_time
         FROM goods g
         LEFT JOIN goods_image gi ON g.goods_id = gi.goods_id
         LEFT JOIN user u ON g.user_id = u.user_id
@@ -91,7 +92,7 @@
         ON g.goods_id = gi.goods_id
         INNER JOIN user u
         ON g.user_id = u.user_id
-        WHERE g.is_deleted = 0
+        WHERE g.is_deleted = 0 and g.user_id!= #{userId}
     </select>
     <!--根据商品ID查询商品信息（含用户名和图片列表）-->
     <select id="findGoodsById" resultMap="GoodsWithImageResultMap" parameterType="java.lang.Long">
@@ -117,24 +118,46 @@
     <!--根据关键词查询相关商品信息（含用户名和图片列表）-->
     <select id="selectByKeyword" resultMap="GoodsWithImageResultMap" parameterType="java.lang.String">
         SELECT
-            g.goods_id AS g_goods_id,
-            g.user_id,
-            u.user_name,
-            g.goods_desc,
-            g.price,
-            g.original_price,
-            g.tags,
-            gi.id AS img_id,
-            gi.goods_id AS img_goods_id,
-            gi.img_url,
-            gi.img_width,
-            gi.img_height,
-            gi.create_time AS img_create_time
+        g.goods_id AS g_goods_id,
+        g.user_id,
+        u.user_name,
+        g.goods_desc,
+        g.price,
+        g.original_price,
+        g.tags,
+        gi.id AS img_id,
+        gi.goods_id AS img_goods_id,
+        gi.img_url,
+        gi.img_width,
+        gi.img_height,
+        gi.create_time AS img_create_time
         FROM goods g
         LEFT JOIN goods_image gi ON g.goods_id = gi.goods_id
         LEFT JOIN user u ON g.user_id = u.user_id
         WHERE g.is_deleted = 0
         AND (g.goods_desc LIKE CONCAT('%', #{keyword}, '%') OR g.tags LIKE CONCAT('%', #{keyword}, '%'))
+        and g.user_id!= #{userId}
+    </select>
+    <!--查找用户发布的商品-->
+    <select id="selectByUserId" resultMap="GoodsWithImageResultMap">
+        SELECT
+        g.goods_id AS g_goods_id,
+        g.user_id,
+        u.user_name,
+        g.goods_desc,
+        g.price,
+        g.original_price,
+        g.tags,
+        gi.id AS img_id,
+        gi.goods_id AS img_goods_id,
+        gi.img_url,
+        gi.img_width,
+        gi.img_height,
+        gi.create_time AS img_create_time
+        FROM goods g
+        LEFT JOIN goods_image gi ON g.goods_id = gi.goods_id
+        LEFT JOIN user u ON g.user_id = u.user_id
+        WHERE g.user_id = #{currentUserId} AND g.is_deleted = 0
     </select>
 
 </mapper>
