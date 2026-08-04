@@ -14,4 +14,5 @@ public class ItemQueryParam {
     Integer pageNumber = 1;//页码
     Integer pageSize = 10;//每页数量
     String sortRules;//排序规则
+    String type;//论坛话题分类
 }

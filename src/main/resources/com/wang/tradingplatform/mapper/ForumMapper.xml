@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wang.tradingplatform.mapper.ForumMapper">
+    <!--添加组团信息-->
+    <insert id="add" parameterType="com.wang.tradingplatform.pojo.entity.TeamUp">
+        INSERT INTO teamup (id, type, title, leader, start_time, created_at, upload_at)
+        VALUES (#{id}, #{type}, #{title}, #{leader},#{startTime}, #{createdAt}, #{uploadAt})
+    </insert>
+    <!--添加圈子动态信息-->
+    <insert id="addDynamic">
+        INSERT INTO circle(user_id,type,content)VALUE(#{userId},#{type},#{content})
+    </insert>
+    <!--添加发布任务信息-->
+    <insert id="addTask">
+        INSERT INTO circle (user_id,type,bounty,request_content,note) VALUE
+        (#{userId},#{type},#{bounty},#{requestContent},#{note})
+    </insert>
+    <!--添加创建活动信息-->
+    <insert id="addActivity">
+        INSERT INTO circle (user_id,title,picture,start_time,end_time,status) VALUE
+        (#{userId},#{title},#{picture},#{startTime},#{endTime},#{status})
+    </insert>
+    <!--分页查询组团信息-->
+    <select id="page" resultType="com.wang.tradingplatform.pojo.entity.TeamUp">
+        select id, type, title, leader, start_time, created_at,leader_name from teamup
+        <if test="type != null and type !=''">
+            where #{type}
+        </if>
+        <if test="sortRules != null and sortRules !=''">
+            order by #{sortRules}
+        </if>
+    </select>
+
+</mapper>

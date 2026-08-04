@@ -1,11 +1,20 @@
 package com.wang.tradingplatform.services.impl;
 
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.wang.tradingplatform.annotation.Permission;
+import com.wang.tradingplatform.mapper.ItemsMapper;
 import com.wang.tradingplatform.mapper.UserMapper;
 import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
+import com.wang.tradingplatform.pojo.entity.Goods;
+import com.wang.tradingplatform.pojo.entity.GoodsImage;
+import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
 import com.wang.tradingplatform.pojo.entity.User;
 import com.wang.tradingplatform.pojo.vo.ChatListVO;
+import com.wang.tradingplatform.pojo.vo.GoodsVO;
+import com.wang.tradingplatform.pojo.vo.PageResult;
 import com.wang.tradingplatform.services.userService;
 import com.wang.tradingplatform.utils.*;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +24,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -25,6 +36,7 @@ public class userServiceImpl implements userService {
     private final userUtil userUtil;
     private final SnowflakeIdUtil snowflakeIdUtil;
     private final RedisUtil redisUtil;
+    private final ItemsMapper itemsMapper;
 
     /**
      * 注册功能
@@ -178,7 +190,58 @@ public class userServiceImpl implements userService {
      */
     @Override
     @Permission
-    public List<Long> selectFavourite() {
-        return userMapper.selectFavourite(UserContext.getCurrentUserId());
+    public PageResult<GoodsVO> selectFavourite(ItemQueryParam itemQueryParam) {
+        //使用PageHelper进行分页处理（try-with-resources确保ThreadLocal资源被清理）
+        try (Page<Goods> page = PageHelper.startPage(
+                itemQueryParam.getPageNumber(),
+                itemQueryParam.getPageSize(),
+                itemQueryParam.getSortRules())) {
+            //调用mapper接口执行查询 查到的数据是没有图片的
+            List<GoodsVO> goodsList = itemsMapper.selectFavourite(itemQueryParam, UserContext.getCurrentUserId());
+            if (goodsList.isEmpty()) {
+                return new PageResult<GoodsVO>(page.getTotal(), Collections.emptyList());
+            }
+            // 2. 提取所有的 goodsId
+            List<Long> goodsIds = goodsList.stream()
+                    .map(GoodsVO::getGoodsId)
+                    .toList();//JDK16以上就可以直接用toList
+            // 3. 批量查询图片并按 goodsId 分组
+            List<GoodsImage> images = itemsMapper.selectImagesByGoodsIds(goodsIds);
+            Map<Long, List<GoodsImage>> imageMap = images.stream()
+                    .collect(Collectors.groupingBy(GoodsImage::getGoodsId));
+            // 4. 回填图片到商品列表中
+            for (GoodsVO goods : goodsList) {//这里的goodsList是没有图片数据的
+                goods.setImgList(imageMap.getOrDefault(goods.getGoodsId(), Collections.emptyList()));
+                /*
+                根据循环到的goods.getGoodsId()得到对应的List<GoodsImage>
+                getOrDefault是得到或者默认值，即要么根据第一个参数goods.getGoodsId()得到想要的内容
+                否则得到一个准备好的默认值Collections.emptyList()
+                */
+            }
+            //构造并返回分页结果对象，包含总记录数和当前页数据
+            return new PageResult<GoodsVO>(page.getTotal(), goodsList);
+        }
+    }
+
+    /**
+     * 得到账号基本信息
+     *
+     * @param account
+     * @return
+     */
+    @Override
+    public User selectAccountInfo(String account) {
+        return userMapper.selectAccountInfo(UserContext.getCurrentUserId());
+    }
+
+    /**
+     * 修改密码
+     *
+     * @param password
+     * @return
+     */
+    @Override
+    public void updatePassword(String password) {
+        userMapper.updateUserPassword(password, UserContext.getCurrentUserId());
     }
 }

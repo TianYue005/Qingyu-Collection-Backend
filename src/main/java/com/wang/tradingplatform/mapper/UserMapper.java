@@ -65,8 +65,22 @@ public interface UserMapper {
 
     /**
      * 查看收藏功能
-     * @param currentUserId
-     * @return
+     * @param currentUserId  用户的Id
+     * @return 返回的是用户收藏的商品的 商品id
      */
     List<Long> selectFavourite(Long currentUserId);
+
+    /**
+     * 得到账号基本信息
+     * @param currentUserId 用户的Id
+     * @return User
+     */
+    User selectAccountInfo(Long currentUserId);
+
+    /**
+     * 修改密码
+     * @param password
+     * @param currentUserId
+     */
+    void updateUserPassword(String password, Long currentUserId);
 }

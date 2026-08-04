@@ -3,8 +3,11 @@ package com.wang.tradingplatform.controller;
 
 import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
+import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
 import com.wang.tradingplatform.pojo.entity.User;
 import com.wang.tradingplatform.pojo.vo.ChatListVO;
+import com.wang.tradingplatform.pojo.vo.GoodsVO;
+import com.wang.tradingplatform.pojo.vo.PageResult;
 import com.wang.tradingplatform.pojo.vo.Result;
 import com.wang.tradingplatform.services.userService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,6 +29,7 @@ public class UserController {
 
     /**
      * 用户注册
+     *
      * @param registerDTO
      * @return
      */
@@ -41,6 +45,7 @@ public class UserController {
 
     /**
      * 用户登录
+     *
      * @param loginDTO
      * @return
      */
@@ -65,8 +70,9 @@ public class UserController {
 
     /**
      * 得到用户的用户名与账号
+     *
      * @param id
-     * @return
+     * @return  Result<User>
      */
     @Operation(summary = "得到用户的用户名与账号")
     @PostMapping("/info/{id}")
@@ -102,8 +108,25 @@ public class UserController {
     //查看收藏功能
     @Operation(summary = "查看收藏功能")
     @GetMapping("/favourite")
-    public Result<List<Long>> favourite() {
+    public Result<PageResult<GoodsVO>> favourite(ItemQueryParam itemQueryParam) {
         log.info("========== 查看收藏功能 ==========");
-        return Result.success(userService.selectFavourite());
+        return Result.success(userService.selectFavourite(itemQueryParam));
+    }
+
+    //得到账号基本信息
+    @Operation(summary = "得到账号基本信息")
+    @GetMapping("/accountInfo ")
+    public Result<User> accountInfo(@RequestParam String account) {
+        log.info("========== 获取账号基本信息 ==========");
+        return Result.success(userService.selectAccountInfo(account));
+    }
+
+    //修改密码
+    @Operation(summary = "修改密码")
+    @PostMapping("/updatePassword")
+    public Result<Object> updatePassword(@RequestParam String password) {
+        log.info("========== 修改密码 ==========");
+        userService.updatePassword(password);
+        return Result.success();
     }
 }

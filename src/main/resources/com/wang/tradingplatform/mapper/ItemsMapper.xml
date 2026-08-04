@@ -159,5 +159,60 @@
         LEFT JOIN user u ON g.user_id = u.user_id
         WHERE g.user_id = #{currentUserId} AND g.is_deleted = 0
     </select>
+    <!-- 1. 只查商品主表列表（支持正常分页） -->
+    <select id="selectFavourite" resultType="com.wang.tradingplatform.pojo.vo.GoodsVO">
+        SELECT
+        g.goods_id AS goodsId,
+        g.user_id AS userId,
+        g.goods_desc AS goodsDesc,
+        g.price,
+        g.original_price AS originalPrice,
+        g.tags,
+        g.create_time AS createTime
+        FROM favourite f
+        INNER JOIN goods g
+        ON f.item_id = g.goods_id
+        <where>
+            <!-- 必选条件：只能查当前登录用户的收藏 -->
+            f.user_id = #{currentUserId}
+
+            <!-- 动态条件：开始时间 -->
+            <if test="param != null and param.beginTime != null">
+                AND g.create_time &gt;= #{param.beginTime}
+            </if>
+
+            <!-- 动态条件：结束时间（通过 DATE_ADD 处理 23:59:59 边界） -->
+            <if test="param != null and param.endTime != null">
+                AND g.create_time &lt; DATE_ADD(#{param.endTime}, INTERVAL 1 DAY)
+            </if>
+        </where>
+
+        <!-- 动态排序逻辑：防止 SQL 注入，若前端未传则给予默认降序 -->
+        <choose>
+            <when test="param != null and param.sortRules != null and param.sortRules != ''">
+                ORDER BY ${param.sortRules}
+            </when>
+            <otherwise>
+                ORDER BY f.create_time DESC  <!-- 默认按收藏时间倒序 -->
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 2. 根据商品 ID 集合批量查询图片（用于 Service 层回填 imgList） -->
+    <select id="selectImagesByGoodsIds"
+            resultType="com.wang.tradingplatform.pojo.entity.GoodsImage"
+            parameterType="java.util.List">
+        SELECT
+        id,
+        goods_id AS goodsId,
+        img_url AS imgUrl,
+        img_width AS imgWidth,
+        img_height AS imgHeight
+        FROM goods_image
+        WHERE goods_id IN
+        <foreach collection="list" item="goodsId" open="(" separator="," close=")">
+            #{goodsId}
+        </foreach>
+    </select>
 
 </mapper>

@@ -15,6 +15,10 @@
     <insert id="addFavourite">
         insert into favourite (user_id, item_id) values (#{userId},#{itemId})
     </insert>
+    <!--修改密码-->
+    <update id="updateUserPassword">
+        UPDATE `user` SET password = #{password} WHERE user.user_id = #{currentUserId}
+    </update>
     <!--登录-->
     <select id="login" resultType="java.lang.Integer">
         select count(*) from user where account = #{account} and password = #{password} and deleted = 0
@@ -53,6 +57,11 @@
     <!--查看收藏功能-->
     <select id="selectFavourite" resultType="java.lang.Long">
         select item_id from favourite where user_id = #{userId}
+    </select>
+    <!--得到账号基本信息-->
+    <select id="selectAccountInfo" resultType="com.wang.tradingplatform.pojo.entity.User">
+        select user_id, user_name, account, status, level, integral, credit, balance, deleted, avatar from user where
+        user_id= #{currentUserId};
     </select>
 
 </mapper>

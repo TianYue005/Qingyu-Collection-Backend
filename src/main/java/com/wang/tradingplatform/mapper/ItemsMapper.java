@@ -4,7 +4,9 @@ import com.wang.tradingplatform.pojo.entity.Goods;
 import com.wang.tradingplatform.pojo.entity.GoodsImage;
 import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
+import com.wang.tradingplatform.pojo.vo.PageResult;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -36,5 +38,9 @@ public interface ItemsMapper {
     //根据用户id查找用户发布的商品
     List<GoodsVO> selectByUserId(Long currentUserId);
 
+    //根据传递的商品id列表查询对应的商品图片信息
+    List<GoodsImage> selectImagesByGoodsIds(List<Long> goodsIds);
 
+    //查到的数据是没有图片的
+    List<GoodsVO> selectFavourite(@Param("param") ItemQueryParam itemQueryParam,@Param("currentUserId") Long currentUserId);
 }

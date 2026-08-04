@@ -2,8 +2,11 @@ package com.wang.tradingplatform.services;
 
 import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
+import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
 import com.wang.tradingplatform.pojo.entity.User;
 import com.wang.tradingplatform.pojo.vo.ChatListVO;
+import com.wang.tradingplatform.pojo.vo.GoodsVO;
+import com.wang.tradingplatform.pojo.vo.PageResult;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -49,6 +52,7 @@ public interface userService {
 
     /**
      * 根据传递的sessionId获取历史消息
+     *
      * @param id
      * @return
      */
@@ -56,6 +60,7 @@ public interface userService {
 
     /**
      * 添加收藏功能
+     *
      * @param id
      * @return
      */
@@ -63,7 +68,24 @@ public interface userService {
 
     /**
      * 查看收藏功能
+     *
      * @return
      */
-    List<Long> selectFavourite();
+    PageResult<GoodsVO> selectFavourite(ItemQueryParam itemQueryParam);
+
+    /**
+     * 得到账号基本信息
+     *
+     * @param account
+     * @return
+     */
+    User selectAccountInfo(String account);
+
+    /**
+     * 修改密码
+     *
+     * @param password
+     * @return
+     */
+    void updatePassword(@Param("password") String password);
 }
