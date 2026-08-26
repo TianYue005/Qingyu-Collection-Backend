@@ -119,7 +119,7 @@
              STOMP Broker Relay连接RabbitMQ -->
         <dependency>
             <groupId>io.projectreactor.netty</groupId>
-            <artifactId>reactor-netty-core</artifactId>
+            <artifactId>reactor-netty</artifactId>
         </dependency>
 
 
@@ -172,7 +172,6 @@
 
 
     <build>
-
         <plugins>
 
             <!-- Spring Boot打包插件 -->
@@ -180,11 +179,6 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
-
-
         </plugins>
-
     </build>
-
-
 </project>

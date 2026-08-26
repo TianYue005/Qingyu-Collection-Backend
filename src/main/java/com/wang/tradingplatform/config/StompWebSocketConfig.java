@@ -24,6 +24,7 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final JwtTokenUtil jwtTokenUtil;
     private final UserMapper userMapper;
+    private final String USER_ID = "userId";
 
     // 构造函数注入
     public StompWebSocketConfig(JwtTokenUtil jwtTokenUtil, UserMapper userMapper) {
@@ -60,9 +61,9 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
                             String token = servletRequest.getServletRequest().getParameter("token");
                             if (token != null && !token.isEmpty()) {
                                 try {
-                                    String userId = new JwtTokenUtil().getUserIdFromToken(token);
+                                    String userId = jwtTokenUtil.getUserIdFromToken(token);
                                     // 存入 WebSocket session 属性，后续在 Controller 中可以通过 @SessionAttribute 获取
-                                    attributes.put("userId", userId);
+                                    attributes.put(USER_ID, userId);
                                     return true;// 允许握手
                                 } catch (Exception e) {
                                     // token 无效，拒绝握手
@@ -85,7 +86,7 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
                                                       @NonNull WebSocketHandler wsHandler,
                                                       @NonNull Map<String, Object> attributes) {
                         // 从刚才在 Interceptor 中存入的 attributes 里取出 userId
-                        String userId = attributes.get("userId").toString();
+                        String userId = attributes.get(USER_ID).toString();
                         if (userId != null) {
                             // 将 userId 作为 Principal 的唯一标识返回
                             return new StompUserPrincipal(userId);
@@ -94,7 +95,7 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     }
                 })
                 .withSockJS(); // 兼容低版本浏览器，降级轮询
-                //设置过attributes还要设置Principal是因为一开始是http协议要换位websocket协议
+        //设置过attributes还要设置Principal是因为一开始是http协议要换位websocket协议
     }
 
     // 配置消息代理

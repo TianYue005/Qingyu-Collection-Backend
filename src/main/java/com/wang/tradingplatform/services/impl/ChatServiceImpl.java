@@ -34,12 +34,13 @@ public class ChatServiceImpl implements ChatService {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     @Override
-    @Permission
     public void saveMessage(ChatMessage message) {
         // 1. 生成唯一ID并补齐时间字段  目前两个id（主键id与会话id）是相同的
         long msgId = snowflakeIdUtil.nextId();
+        if (message.getSessionId() == null) {
+            message.setSessionId(msgId);
+        }
         message.setId(msgId);
-        message.setSessionId(String.valueOf(msgId));
         message.setSendTime(LocalDateTime.now());//发送时间
         message.setIsRead(0);//是否已读
 
@@ -54,29 +55,7 @@ public class ChatServiceImpl implements ChatService {
         saveToRedis(message);
     }
 
-    // ==================== 查询历史 ====================
 
-    //todo 未检查的代码
-    @Override
-    @Permission
-    public List<ChatMessage> getHistoryByRoomId(String roomId, int limit) {
-        Long groupId = Long.valueOf(roomId);
-        String todayKey = buildGroupRedisKey(groupId);
-
-        // 先从 Redis 取当天消息
-        List<ChatMessage> redisMessages = getMessagesFromRedis(todayKey);
-        if (redisMessages.size() >= limit) {
-            return redisMessages.subList(0, limit);
-        }
-
-        // Redis 不够，从 MySQL 补
-        int remaining = limit - redisMessages.size();
-        List<ChatMessage> dbMessages = chatMessageMapper.selectGroupHistory(groupId, remaining);
-
-        List<ChatMessage> result = new ArrayList<>(redisMessages);
-        result.addAll(dbMessages);
-        return result;
-    }
 
     //todo 未检查的代码
     @Override
@@ -104,7 +83,7 @@ public class ChatServiceImpl implements ChatService {
      */
     private void saveToRedis(ChatMessage message) {
         String key;
-        if (message.getGroupId() == 0) {
+        if (message.getGroupId() == null || message.getGroupId() == 0) {
             //GroupId为0，则是私聊
             key = buildPrivateRedisKey(message.getFromUid(), message.getToUid());//发送者id与接收者id
         } else {
@@ -121,7 +100,7 @@ public class ChatServiceImpl implements ChatService {
      * 从 Redis zSet 中读取消息（尾部最新 100 条，因为是右插入）
      */
     private List<ChatMessage> getMessagesFromRedis(String key) {
-        Set<Object> message  = redisUtil.zRange(key, -100, -1);//查询到最新的100条数据
+        Set<Object> message = redisUtil.zRange(key, -100, -1);//查询到最新的100条数据
         if (message == null || message.isEmpty()) {//如果是空内容就返回空集合
             return List.of();
         }

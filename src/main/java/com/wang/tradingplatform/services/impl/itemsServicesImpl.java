@@ -6,10 +6,8 @@ import com.wang.tradingplatform.annotation.Permission;
 import com.wang.tradingplatform.mapper.ItemsMapper;
 import com.wang.tradingplatform.mapper.UserMapper;
 import com.wang.tradingplatform.pojo.dto.UploadItemDTO;
-import com.wang.tradingplatform.pojo.entity.Goods;
-import com.wang.tradingplatform.pojo.entity.GoodsImage;
-import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
-import com.wang.tradingplatform.pojo.entity.Picture;
+import com.wang.tradingplatform.pojo.entity.*;
+import com.wang.tradingplatform.pojo.vo.CommentGoodsVO;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
 import com.wang.tradingplatform.services.itemsServices;
@@ -19,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -74,7 +73,7 @@ public class itemsServicesImpl implements itemsServices {
                 itemQueryParam.getPageSize(),
                 itemQueryParam.getSortRules())) {
             //调用mapper接口执行查询 查到的数据是没有图片的
-            List<GoodsVO> goodsList = itemsMapper.page(itemQueryParam,UserContext.getCurrentUserId());
+            List<GoodsVO> goodsList = itemsMapper.page(itemQueryParam, UserContext.getCurrentUserId());
             //构造并返回分页结果对象，包含总记录数和当前页数据
             return new PageResult<GoodsVO>(page.getTotal(), goodsList);
         }
@@ -84,14 +83,20 @@ public class itemsServicesImpl implements itemsServices {
     @Override
     @Permission
     public GoodsVO findGoodsById(Long id) {
-        return itemsMapper.findGoodsById(id);
+        GoodsVO goodsById = itemsMapper.findGoodsById(id);
+        //查看某商品是否被收藏
+        Integer is = itemsMapper.isFavourite(id, UserContext.getCurrentUserId());
+        if (is != null && id != 0 ) {
+            goodsById.setFavourite(true);
+        }
+        return goodsById;
     }
 
     //根据关键词查询相关商品信息
     @Override
     @Permission
     public PageResult<GoodsVO> selectByKeyword(String keyword) {
-        List<GoodsVO> goodsList = itemsMapper.selectByKeyword(keyword,UserContext.getCurrentUserId());
+        List<GoodsVO> goodsList = itemsMapper.selectByKeyword(keyword, UserContext.getCurrentUserId());
         return new PageResult<>((long) goodsList.size(), goodsList);
     }
 
@@ -101,5 +106,31 @@ public class itemsServicesImpl implements itemsServices {
     public PageResult<GoodsVO> selectMyGoods() {
         List<GoodsVO> goodsList = itemsMapper.selectByUserId(UserContext.getCurrentUserId());
         return new PageResult<>((long) goodsList.size(), goodsList);
+    }
+
+    //商品评论
+    @Override
+    public void addItemComment(CommentGoods comment) {
+        comment.setUserId(UserContext.getCurrentUserId());
+        comment.setCreateTime(LocalDateTime.now());
+        itemsMapper.addCommentItem(comment);
+    }
+
+    //分页查询商品评论
+    @Override
+    public PageResult<CommentGoodsVO> selectItemComment(Long goodsId) {
+        try (Page<CommentGoodsVO> page = PageHelper.startPage(1, 10)) {
+            List<CommentGoodsVO> commentList = itemsMapper.selectItemComment(goodsId);
+            return new PageResult<>(page.getTotal(), commentList);
+        }
+    }
+
+    //查看该评论之前的所有互动
+    @Override
+    public PageResult<CommentGoodsVO> selectItemCommentInteraction(Long id) {
+        try (Page<CommentGoodsVO> page = PageHelper.startPage(1, 10)) {
+            List<CommentGoodsVO> commentList = itemsMapper.selectItemCommentInteraction(id);
+            return new PageResult<>(page.getTotal(), commentList);
+        }
     }
 }

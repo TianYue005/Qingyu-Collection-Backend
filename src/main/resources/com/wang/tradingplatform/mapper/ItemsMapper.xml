@@ -210,9 +210,97 @@
         img_height AS imgHeight
         FROM goods_image
         WHERE goods_id IN
-        <foreach collection="list" item="goodsId" open="(" separator="," close=")">
+        <foreach collection="goodsIds" item="goodsId" open="(" separator="," close=")">
             #{goodsId}
         </foreach>
+    </select>
+
+    <!--商品评论-->
+    <insert id="addCommentItem" parameterType="com.wang.tradingplatform.pojo.entity.CommentGoods">
+        INSERT INTO comment_goods(goods_id, parent_id, text, picture, son, create_time, user_id,
+        reply_user_id,good_or_bad)
+        VALUES (#{goodsId}, #{parentId}, #{text}, #{picture}, #{son}, #{createTime}, #{userId},
+        #{replyUserId},#{goodOrBad})
+    </insert>
+
+    <!--根据商品id查询对应的评论信息-->
+    <select id="selectItemComment" resultType="com.wang.tradingplatform.pojo.vo.CommentGoodsVO">
+        SELECT
+        ct.id AS id,
+        ct.goods_id AS goods_id,
+        ct.parent_id AS parent_id,
+        ct.text AS text,
+        ct.picture AS picture,
+        ct.son AS son,
+        ct.create_time AS create_time,
+        ct.good_or_bad AS good_or_bad,
+        ct.user_id AS user_id,
+        U1.avatar AS user_avatar,
+        U1.user_name AS user_name,
+
+        ct.reply_user_id AS reply_user_id,
+        U2.avatar AS reply_user_avatar,
+        U2.user_name AS reply_user_name
+        FROM comment_goods AS ct
+        LEFT JOIN user U1 ON U1.user_id = ct.user_id
+        LEFT JOIN user U2 ON U2.user_id = ct.reply_user_id
+        WHERE ct.goods_id = #{goodsId}
+    </select>
+
+    <!--查看该评论之前的所有互动-->
+    <select id="selectItemCommentInteraction" resultType="com.wang.tradingplatform.pojo.vo.CommentGoodsVO">
+        WITH RECURSIVE CommentPath AS (
+        SELECT id,
+        goods_id,
+        parent_id,
+        text,
+        picture,
+        son,
+        user_id,
+        reply_user_id,
+        create_time,
+        good_or_bad,
+        0 AS level
+        FROM comment_goods
+        WHERE id = #{commentId}
+
+        UNION ALL
+
+        SELECT c.id,
+        c.goods_id,
+        c.parent_id,
+        c.text,
+        c.picture,
+        c.son,
+        c.user_id,
+        c.reply_user_id,
+        c.create_time,
+        c.good_or_bad,
+        cp.level + 1 AS level
+        FROM comment_goods c
+        INNER JOIN CommentPath cp ON c.id = cp.parent_id)
+        SELECT cp.id AS id,
+        cp.goods_id AS goods_id,
+        cp.parent_id AS parent_id,
+        cp.text AS text,
+        cp.picture AS picture,
+        cp.son AS son,
+        cp.create_time AS create_time,
+        cp.level AS level,
+        cp.user_id AS user_id,
+        U1.avatar AS user_avatar,
+        U1.user_name AS user_name,
+        cp.reply_user_id AS reply_user_id,
+        U2.avatar AS reply_user_avatar,
+        U2.user_name AS reply_user_name
+        FROM CommentPath cp
+        LEFT JOIN user U1 ON U1.user_id = cp.user_id
+        LEFT JOIN user U2 ON U2.user_id = cp.reply_user_id
+        ORDER BY cp.level DESC
+    </select>
+    <!--查看某商品是否被收藏-->
+    <select id="isFavourite" resultType="java.lang.Integer">
+        SELECT id FROM favourite WHERE user_id=#{currentUserId} AND item_id=#{id}
     </select>
 
 </mapper>

@@ -7,9 +7,7 @@ import java.util.List;
 
 public interface ChatService {
     //保存聊天信息到Redis与MySQL
-    void saveMessage(ChatMessage message);
-
-    List<ChatMessage> getHistoryByRoomId(String roomId, int limit);
+    void saveMessage(ChatMessage webSocketDTO);
 
     List<ChatMessage> getPrivateHistory(Long userId1, Long userId2, int limit);
 }

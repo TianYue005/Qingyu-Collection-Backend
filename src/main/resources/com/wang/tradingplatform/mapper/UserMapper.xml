@@ -15,10 +15,18 @@
     <insert id="addFavourite">
         insert into favourite (user_id, item_id) values (#{userId},#{itemId})
     </insert>
+    <!--发起会话-->
+    <insert id="createChatSession">
+        INSERT INTO session_state (session_id,is_read,from_uid,to_uid,group_id,create_time)
+        VALUES (#{sessionId},#{isRead},#{fromUid},#{toUid},#{groupId},#{createTime})
+    </insert>
     <!--修改密码-->
     <update id="updateUserPassword">
         UPDATE `user` SET password = #{password} WHERE user.user_id = #{currentUserId}
     </update>
+    <delete id="favouriteRM">
+        DELETE FROM favourite WHERE user_id=#{userId} AND item_id=#{id}
+    </delete>
     <!--登录-->
     <select id="login" resultType="java.lang.Integer">
         select count(*) from user where account = #{account} and password = #{password} and deleted = 0
@@ -31,29 +39,7 @@
     <select id="selectAccountAndName" resultType="com.wang.tradingplatform.pojo.entity.User">
         SELECT user_name,account FROM user WHERE user_id = #{userId} AND deleted = 0
     </select>
-    <!--查找用户的聊天列表  session的id列表-->
-    <select id="selectUserSessionList" resultType="java.lang.Long">
-        select session_id from session_user where u_id=#{currentUserId}
-    </select>
-    <!--根据session的id列表查找对应的聊天信息 并返回列表数据-->
-    <select id="selectUserChatList" resultType="com.wang.tradingplatform.pojo.vo.ChatListVO">
-        select
-        id,
-        session_id,
-        from_uid,
-        to_uid,
-        avatar,
-        title,
-        send_time,
-        nick_name,
-        content
-        from conversation
-        where session_id in
-        <foreach collection="sessionId" separator="," open="(" close=")" item="sid">
-            #{sid}
-        </foreach>
-        order by send_time desc
-    </select>
+
     <!--查看收藏功能-->
     <select id="selectFavourite" resultType="java.lang.Long">
         select item_id from favourite where user_id = #{userId}
@@ -61,7 +47,84 @@
     <!--得到账号基本信息-->
     <select id="selectAccountInfo" resultType="com.wang.tradingplatform.pojo.entity.User">
         select user_id, user_name, account, status, level, integral, credit, balance, deleted, avatar from user where
-        user_id= #{currentUserId};
+        user_id= #{currentUserId}
+    </select>
+    <!--根据用户id查询用户名-->
+    <select id="selectUserNameById" resultType="java.lang.String">
+        select user_name from user where user_id= #{currentUserId}
+    </select>
+    <!--看现在双方是否有会话-->
+    <select id="selectSessionHistory" resultType="java.lang.Long">
+        SELECT session_id FROM session_state
+        WHERE (from_uid=#{fromUid} AND to_uid=#{toUid}) OR (from_uid=#{toUid} AND to_uid=#{fromUid})
+    </select>
+    <!--分别查询自己与别人对自己发起的聊天-->
+    <select id="selectChatList" resultType="com.wang.tradingplatform.pojo.vo.ChatMessageListVO">
+        SELECT
+        u.user_id,
+        u.user_name,
+        u.avatar,
+        t.content,
+        t.msg_type,
+        t.send_time,
+        t.session_id
+
+        FROM
+        (
+        SELECT
+        cm.*,
+
+        ROW_NUMBER() OVER(
+        PARTITION BY cm.session_id
+        ORDER BY cm.send_time DESC
+        ) AS rn
+
+        FROM chat_message cm
+
+        WHERE cm.from_uid =#{currentUserId}
+        OR cm.to_uid = #{currentUserId}
+
+        ) t
+
+        JOIN user u
+
+        ON u.user_id =
+        CASE
+        WHEN t.from_uid =#{currentUserId}
+        THEN t.to_uid
+        ELSE t.from_uid
+        END
+
+        WHERE t.rn = 1
+
+        ORDER BY t.send_time DESC
+    </select>
+    <!--查找该用户的所有有关联的sessionId-->
+    <select id="selectUserSessionList" resultType="java.lang.Long">
+        SELECT session_id
+        FROM session_state
+        WHERE (from_uid=#{currentUserId} or to_uid=#{currentUserId}) AND group_id=0
+    </select>
+    <!--根据session的id列表查找对应的聊天信息 并返回列表数据-->
+    <select id="selectUserChatList" resultType="com.wang.tradingplatform.pojo.vo.ChatMessageListVO">
+        SELECT session_id, from_uid, to_uid, content, msg_type, send_time
+        FROM chat_message
+        WHERE session_id IN
+        <foreach collection="sessionId" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        and group_id = 0
+    </select>
+    <!--查找请求用户有关的所有点对点对话的另一方的id的列表-->
+    <select id="selectToId" resultType="java.lang.Long">
+        SELECT IF(from_uid = #{id}, to_uid, from_uid) AS uid
+        FROM session_state
+        WHERE from_uid = #{id}
+        OR to_uid = #{id}
+    </select>
+    <!--根据求到的id列表查询最后一条消息-->
+    <select id="selectEndMessage" resultType="com.wang.tradingplatform.pojo.vo.ChatMessageListVO">
+
     </select>
 
 </mapper>

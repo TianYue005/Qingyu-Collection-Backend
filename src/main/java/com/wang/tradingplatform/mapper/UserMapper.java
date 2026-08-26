@@ -1,7 +1,9 @@
 package com.wang.tradingplatform.mapper;
 
+import com.wang.tradingplatform.pojo.entity.ChatMessage;
+import com.wang.tradingplatform.pojo.entity.SessionState;
 import com.wang.tradingplatform.pojo.entity.User;
-import com.wang.tradingplatform.pojo.vo.ChatListVO;
+import com.wang.tradingplatform.pojo.vo.ChatMessageListVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -42,12 +44,10 @@ public interface UserMapper {
     User selectAccountAndName(Long userId);
 
     /**
-     * 查找用户的聊天列表  session的id列表
-     *
-     * @param currentUserId
-     * @return
+     * 根据用户id查询用户名
      */
-    List<Long> selectUserSessionList(Long currentUserId);
+    String selectUserNameById(Long id);
+
 
     /**
      * 根据session的id列表查找对应的聊天信息 并返回列表数据
@@ -55,7 +55,7 @@ public interface UserMapper {
      * @param sessionIdList
      * @return
      */
-    List<ChatListVO> selectUserChatList(@Param("sessionId") List<Long> sessionIdList);
+    List<ChatMessageListVO> selectUserChatList(@Param("sessionId") List<Long> sessionIdList);
 
     /**
      * 添加收藏功能
@@ -83,4 +83,25 @@ public interface UserMapper {
      * @param currentUserId
      */
     void updateUserPassword(String password, Long currentUserId);
+
+    //取消收藏功能
+    Integer favouriteRM(Long id,Long userId);
+
+    //看现在双方是否有会话(有的话直接返回会话的sessionId)
+    Long selectSessionHistory(@Param("toUid") Long toUserId,@Param("fromUid") Long currentUserId);
+
+    //发起会话
+    Long createChatSession(SessionState Session);
+
+    //分别查询自己与别人对自己发起的聊天
+    List<ChatMessageListVO> selectChatList(Long currentUserId);
+
+    //查找该用户的所有有关联的sessionId
+    List<Long> selectUserSessionList(Long currentUserId);
+
+    //查找请求用户有关的所有点对点对话的另一方的id的列表。
+    List<Long> selectToId(Long id);
+
+    //根据求到的id列表查询最后一条消息
+    List<ChatMessageListVO> selectEndMessage(List<Long> idList);
 }

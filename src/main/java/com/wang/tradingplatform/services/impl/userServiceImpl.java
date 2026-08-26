@@ -2,17 +2,13 @@ package com.wang.tradingplatform.services.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
 import com.wang.tradingplatform.annotation.Permission;
 import com.wang.tradingplatform.mapper.ItemsMapper;
 import com.wang.tradingplatform.mapper.UserMapper;
 import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
-import com.wang.tradingplatform.pojo.entity.Goods;
-import com.wang.tradingplatform.pojo.entity.GoodsImage;
-import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
-import com.wang.tradingplatform.pojo.entity.User;
-import com.wang.tradingplatform.pojo.vo.ChatListVO;
+import com.wang.tradingplatform.pojo.entity.*;
+import com.wang.tradingplatform.pojo.vo.ChatMessageListVO;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
 import com.wang.tradingplatform.services.userService;
@@ -22,10 +18,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 @Service
@@ -83,6 +81,7 @@ public class userServiceImpl implements userService {
      */
     @Override
     public String login(LoginDTO loginDTO) {
+        Long uId = userMapper.findIDByAccount(loginDTO.getAccount());
         //检验loginDTO的数据
         boolean b = userUtil.checkLoginDTO(loginDTO);
         if (!b) {
@@ -94,7 +93,6 @@ public class userServiceImpl implements userService {
             return "登陆失败，请检查账号或者密码";
         }
         //生成token,并返回
-        Long uId = userMapper.findIDByAccount(loginDTO.getAccount());
         String token = jwtTokenUtil.generateToken(uId);
         redisUtil.set(String.valueOf(uId), token);//向redis中存储用户的token
         return token;
@@ -138,37 +136,43 @@ public class userServiceImpl implements userService {
 
 
     /**
-     * 查找用户的聊天列表
      *
-     * @return 要么返回一个空集合，要么就是会话列表信息
+     * @return 会话列表信息
      */
     @Override
     @Permission
-    public List<ChatListVO> selectChatList() {
-        //得到了用户的聊天列表（即各个会话的sessionId列表）
-        List<Long> sessionIdList = userMapper.selectUserSessionList(UserContext.getCurrentUserId());
-        //根据用户的聊天列表查到具体的session对话
-        return sessionIdList.isEmpty() ? Collections.emptyList() : userMapper.selectUserChatList(sessionIdList);
+    public List<ChatMessageListVO> selectChatList() {
+        Long id = UserContext.getCurrentUserId();
+        List<ChatMessageListVO> list= userMapper.selectChatList(id);
+        System.out.println("------------------------------------------");
+        System.out.println(list);
+        return list;
     }
 
     /**
      * 根据传递的sessionId获取历史消息
      *
-     * @param id
+     * @param itemQueryParam
      * @return
      */
     @Override
     @Permission
-    public List<ChatListVO> selectHistory(Long id) {
+    public PageResult<ChatMessageListVO> selectHistory(ItemQueryParam itemQueryParam) {
         //查找该用户的所有有关联的sessionId
         List<Long> sessionIdList = userMapper.selectUserSessionList(UserContext.getCurrentUserId());
         //判断传递的sessionId是否真的属于该用户
-        if (sessionIdList.contains(id)) {
+        if (sessionIdList.contains(itemQueryParam.getSessionId())) {
             //该用户传递的sessionId确实是该用户的
-            return userMapper.selectUserChatList(List.of(id));
+            try (Page<ChatMessageListVO> page = PageHelper.startPage(
+                    itemQueryParam.getPageNumber(),
+                    itemQueryParam.getPageSize()
+            )) {
+                List<ChatMessageListVO> list1 = userMapper.selectUserChatList(List.of(itemQueryParam.getSessionId()));
+                return new PageResult<ChatMessageListVO>(page.getTotal(), list1);
+            }
         }
         //根据结果返回信息
-        return List.of();
+        return new PageResult<>(0L, List.of());
     }
 
     /**
@@ -204,7 +208,7 @@ public class userServiceImpl implements userService {
             // 2. 提取所有的 goodsId
             List<Long> goodsIds = goodsList.stream()
                     .map(GoodsVO::getGoodsId)
-                    .toList();//JDK16以上就可以直接用toList
+                    .toList();
             // 3. 批量查询图片并按 goodsId 分组
             List<GoodsImage> images = itemsMapper.selectImagesByGoodsIds(goodsIds);
             Map<Long, List<GoodsImage>> imageMap = images.stream()
@@ -243,5 +247,37 @@ public class userServiceImpl implements userService {
     @Override
     public void updatePassword(String password) {
         userMapper.updateUserPassword(password, UserContext.getCurrentUserId());
+    }
+
+    //取消收藏功能
+    @Override
+    public Integer favouriteRM(Long id) {
+        return userMapper.favouriteRM(id, UserContext.getCurrentUserId());
+    }
+
+    //用户点击了发起会话的按钮
+    @Override
+    public Long createChatSession(Long toUserId) {
+        SnowflakeIdUtil util = new SnowflakeIdUtil();
+        long sessionId = 0L;
+        Long CurrentUserId = UserContext.getCurrentUserId();
+        //先看现在双方是否有会话
+        Long sessionHistory = userMapper.selectSessionHistory(toUserId, CurrentUserId);
+        if (sessionHistory == null) {
+            //说明没有历史会话
+            sessionId = util.nextId();
+
+            SessionState Session = new SessionState();
+            Session.setGroupId(0L);//设置私聊
+            Session.setSessionId(sessionId);//sessionId
+            Session.setFromUid(CurrentUserId);//发送用户的id
+            Session.setToUid(toUserId);//接受用户的id
+            Session.setCreateTime(LocalDateTime.now());//会话创建时间
+            Session.setIsRead(0L);//设为未读 TODO先这个样子 忘了之前怎么想的了
+
+            userMapper.createChatSession(Session);
+            sessionHistory = userMapper.selectSessionHistory(toUserId, CurrentUserId);
+        }
+        return sessionHistory;
     }
 }

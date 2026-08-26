@@ -1,9 +1,12 @@
 package com.wang.tradingplatform.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -42,5 +45,14 @@ public class RabbitMQConfig {
                 .bind(chatMysqlQueue())
                 .to(chatExchange())
                 .with(ROUTING_KEY);
+    }
+
+    /**
+     * 使用 JSON 序列化替代默认的 Java 序列化，
+     * 避免消费端因反序列化白名单导致的 SecurityException。
+     */
+    @Bean
+    public MessageConverter messageConverter(ObjectMapper objectMapper) {
+        return new Jackson2JsonMessageConverter(objectMapper);
     }
 }

@@ -20,6 +20,7 @@ public class GoodsVO {
     private String userName;
     private BigDecimal originalPrice;
     private String tags;
+    private boolean favourite;//是否已经收藏
     // 商品图片集合（一对多）
     private List<GoodsImage> imgList;
 }

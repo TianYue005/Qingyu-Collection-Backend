@@ -1,11 +1,9 @@
 package com.wang.tradingplatform.controller;
 
 import com.wang.tradingplatform.pojo.dto.UploadItemDTO;
-import com.wang.tradingplatform.pojo.entity.Goods;
+import com.wang.tradingplatform.pojo.entity.CommentGoods;
 import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
-import com.wang.tradingplatform.pojo.vo.GoodsVO;
-import com.wang.tradingplatform.pojo.vo.PageResult;
-import com.wang.tradingplatform.pojo.vo.Result;
+import com.wang.tradingplatform.pojo.vo.*;
 import com.wang.tradingplatform.services.impl.itemsServicesImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -71,5 +69,30 @@ public class ItemsController {
         log.info("========== 查询用户发布的商品 ==========");
         PageResult<GoodsVO> goods = itemServices.selectMyGoods();
         return Result.success(goods);
+    }
+
+    /*商品评论相关*/
+    //商品评论
+    @Operation(summary = "商品评论")
+    @PostMapping("/add/comment/item")
+    public Result<CommentGoods> addItemComment(@RequestBody CommentGoods comment) {
+        itemServices.addItemComment(comment);
+        return Result.success();
+    }
+
+    //查看商品评论
+    @Operation(summary = "查看商品评论")
+    @GetMapping("/select/comment/item")
+    public Result<PageResult<CommentGoodsVO>> selectItemComment(@RequestParam Long goodsId) {
+        PageResult<CommentGoodsVO> page = itemServices.selectItemComment(goodsId);
+        return Result.success(page);
+    }
+
+    //查看该评论之前的所有互动
+    @Operation(summary = "查看该评论之前的所有互动")
+    @GetMapping("/select/comment/item/{id}")
+    public Result<PageResult<CommentGoodsVO>> selectItemCommentInteraction(@PathVariable Long id) {
+        PageResult<CommentGoodsVO> page = itemServices.selectItemCommentInteraction(id);
+        return Result.success(page);
     }
 }

@@ -16,7 +16,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(interceptor)
-                .addPathPatterns("/api/**","/upload/**") // 拦截所有请求
+                .addPathPatterns("/api/**","/upload/**","/websocket/**") // 拦截所有请求
                 .excludePathPatterns("/api/user/login", "/api/user/register", "/static/**", "/error"); // 放行接口
     }
 
@@ -28,5 +28,10 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedMethods("GET", "POST", "PUT", "DELETE")  // 允许的请求方式
                 .allowedHeaders("*")       // 允许携带的请求头
                 .allowCredentials(true);   // 允许携带 cookie
+        registry.addMapping("/websocket/**")
+                .allowedOrigins("http://localhost:5173")
+                .allowedMethods("GET", "POST", "PUT", "DELETE")
+                .allowedHeaders("*")
+                .allowCredentials(true);
     }
 }

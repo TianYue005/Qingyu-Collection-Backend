@@ -24,6 +24,14 @@ public class RedisUtil {
     }
 
     /**
+     * 根据key删除对应的内容
+     * @param key
+     */
+    public void delete(String key) {
+        redisTemplate.delete(key);
+    }
+
+    /**
      * 设置值+过期时间
      */
     public void set(String key, Object value, long time, TimeUnit unit) {

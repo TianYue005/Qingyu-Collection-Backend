@@ -19,6 +19,7 @@ public class PermissionsAspect {
     }
 
 
+    //检查用户身份是否过期
     @Before("@annotation(permission)")
     public void before(Permission permission) {
         String redisToken = (String) redisUtil.get(String.valueOf(UserContext.getCurrentUserId()));
@@ -27,4 +28,6 @@ public class PermissionsAspect {
             throw new  TokenException("当前用户的Token已过期");
         }
     }
+
+
 }

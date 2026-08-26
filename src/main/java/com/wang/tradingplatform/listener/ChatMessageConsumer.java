@@ -17,15 +17,22 @@ public class ChatMessageConsumer {
 
     /**
      * 监听了队列  QUEUE_NAME = "chat.mysql.queue" 一旦有消息就会自动运行
+     *
      * @param message
      */
     @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME)
     public void handleMessageSave(ChatMessage message) {//形参由mq发送的message对象接收
-        try {
-            chatMessageMapper.insert(message);//向mysql中插入消息
-            log.info("消息落库成功: id={}", message.getId());
-        } catch (Exception e) {
-            log.error("消息落库失败: id={}, error={}", message.getId(), e.getMessage());
+        //点对点聊天的情况
+        if (message.getGroupId() == null || message.getGroupId() == 0) {
+            try {
+                chatMessageMapper.insert(message);//向mysql中插入消息
+                log.info("消息落库成功: id={}", message.getId());
+            } catch (Exception e) {
+                log.error("消息落库失败: id={}, error={}", message.getId(), e.getMessage());
+            }
+        }else{
+            //TODO
+            System.out.println("群聊相关功能为完善");
         }
     }
 }

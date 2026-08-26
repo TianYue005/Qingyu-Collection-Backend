@@ -1,13 +1,13 @@
 package com.wang.tradingplatform.mapper;
 
+import com.wang.tradingplatform.pojo.entity.CommentGoods;
 import com.wang.tradingplatform.pojo.entity.Goods;
 import com.wang.tradingplatform.pojo.entity.GoodsImage;
 import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
+import com.wang.tradingplatform.pojo.vo.CommentGoodsVO;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
-import com.wang.tradingplatform.pojo.vo.PageResult;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -43,4 +43,16 @@ public interface ItemsMapper {
 
     //查到的数据是没有图片的
     List<GoodsVO> selectFavourite(@Param("param") ItemQueryParam itemQueryParam,@Param("currentUserId") Long currentUserId);
+
+    //商品评论
+    void addCommentItem( CommentGoods comment);
+
+    //查看商品评论
+    List<CommentGoodsVO> selectItemComment(Long goodsId);
+
+    //查看该评论之前的所有互动
+    List<CommentGoodsVO> selectItemCommentInteraction(Long commentId);
+
+    //查看某商品是否被收藏
+    Integer isFavourite(Long id, Long currentUserId);
 }

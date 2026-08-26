@@ -4,7 +4,7 @@ import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
 import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
 import com.wang.tradingplatform.pojo.entity.User;
-import com.wang.tradingplatform.pojo.vo.ChatListVO;
+import com.wang.tradingplatform.pojo.vo.ChatMessageListVO;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
 import org.apache.ibatis.annotations.Param;
@@ -48,15 +48,15 @@ public interface userService {
      *
      * @return
      */
-    List<ChatListVO> selectChatList();
+    List<ChatMessageListVO> selectChatList();
 
     /**
      * 根据传递的sessionId获取历史消息
      *
-     * @param id
+     * @param itemQueryParam
      * @return
      */
-    List<ChatListVO> selectHistory(@Param("id") Long id);
+    PageResult<ChatMessageListVO> selectHistory(ItemQueryParam itemQueryParam);
 
     /**
      * 添加收藏功能
@@ -88,4 +88,10 @@ public interface userService {
      * @return
      */
     void updatePassword(@Param("password") String password);
+
+    //取消收藏功能
+    Integer favouriteRM(Long id);
+
+    //发起会话
+    Long createChatSession(Long toUserId);
 }

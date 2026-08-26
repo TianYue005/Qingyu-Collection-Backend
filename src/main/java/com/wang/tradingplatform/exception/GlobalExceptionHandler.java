@@ -13,4 +13,11 @@ public class GlobalExceptionHandler {
                 e.getMessage()
         );
     }
+    //TeamUp的Type不是允许的类型
+    @ExceptionHandler(TeamUpTypeException.class)
+    public Result<String> TeamUpTypeExceptionHandler(TokenException e) {
+        return Result.error(
+                e.getMessage()
+        );
+    }
 }

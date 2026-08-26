@@ -4,33 +4,357 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wang.tradingplatform.mapper.ForumMapper">
     <!--添加组团信息-->
-    <insert id="add" parameterType="com.wang.tradingplatform.pojo.entity.TeamUp">
-        INSERT INTO teamup (id, type, title, leader, start_time, created_at, upload_at)
-        VALUES (#{id}, #{type}, #{title}, #{leader},#{startTime}, #{createdAt}, #{uploadAt})
+    <insert id="add" parameterType="com.wang.tradingplatform.pojo.entity.TeamUp" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO teamup (id, type, title, leader, start_time, create_at, update_at,leader_name)
+        VALUES (#{id}, #{type}, #{title}, #{leader},#{startTime}, #{createAt}, #{updateAt},#{leaderName})
     </insert>
     <!--添加圈子动态信息-->
     <insert id="addDynamic">
-        INSERT INTO circle(user_id,type,content)VALUE(#{userId},#{type},#{content})
+        INSERT INTO circle(user_id,type,content,category)VALUES(#{userId},#{type},#{content},#{category})
     </insert>
     <!--添加发布任务信息-->
     <insert id="addTask">
-        INSERT INTO circle (user_id,type,bounty,request_content,note) VALUE
-        (#{userId},#{type},#{bounty},#{requestContent},#{note})
+        INSERT INTO circle (user_id,type,bounty,request_content,note,category) VALUE
+        (#{userId},#{type},#{bounty},#{requestContent},#{note},#{category})
     </insert>
     <!--添加创建活动信息-->
     <insert id="addActivity">
-        INSERT INTO circle (user_id,title,picture,start_time,end_time,status) VALUE
-        (#{userId},#{title},#{picture},#{startTime},#{endTime},#{status})
+        INSERT INTO circle (user_id,title,picture,start_time,end_time,status,category) VALUE
+        (#{userId},#{title},#{picture},#{startTime},#{endTime},#{status},#{category})
+    </insert>
+    <!--组团评论-->
+    <insert id="addComment" parameterType="com.wang.tradingplatform.pojo.entity.Comment">
+        INSERT INTO comment_teamup(teamup_id, parent_id, text, picture, son, create_time, user_id, reply_user_id)
+        VALUES (#{teamupId}, #{parentId}, #{text}, #{picture}, #{son}, #{createTime}, #{userId}, #{replyUserId})
+    </insert>
+    <!--圈子评论-->
+    <insert id="addCommentCircle">
+        INSERT INTO comment_circle(circle_id, parent_id, text, picture, son, create_time, user_id, reply_user_id)
+        VALUES (#{circleId}, #{parentId}, #{text}, #{picture}, #{son}, #{createTime}, #{userId}, #{replyUserId})
     </insert>
     <!--分页查询组团信息-->
-    <select id="page" resultType="com.wang.tradingplatform.pojo.entity.TeamUp">
-        select id, type, title, leader, start_time, created_at,leader_name from teamup
-        <if test="type != null and type !=''">
-            where #{type}
-        </if>
+    <select id="TeamUpPage" resultType="com.wang.tradingplatform.pojo.entity.TeamUp">
+        select id, type, title, leader, start_time, create_at,leader_name
+        from teamup
+        <where>
+            <!--suppress XmlUnresolvedReference -->
+            <if test="type !=null and type !='' and type !='all'">
+                type=#{type}
+            </if>
+        </where>
         <if test="sortRules != null and sortRules !=''">
-            order by #{sortRules}
+            order by ${sortRules}
+        </if>
+    </select>
+    <!--分页查询 圈子动态-->
+    <select id="DynamicPage" resultType="com.wang.tradingplatform.pojo.entity.Circle">
+        SELECT id, type,CONTENT,create_time FROM circle
+        <!--查询 圈子 选项某一选项-->
+        where category = 'Dynamics'
+        <if test="sortRules != null and sortRules !=''">
+            order by ${sortRules}
+        </if>
+    </select>
+    <!--分页查询 发布任务-->
+    <select id="TaskPage" resultType="com.wang.tradingplatform.pojo.entity.Circle">
+        SELECT id,type,bounty,request_content,note,user_id,create_time FROM circle
+        <!--查询 圈子 选项某一选项-->
+        where category = 'Task'
+        <if test="sortRules != null and sortRules !=''">
+            order by ${sortRules}
         </if>
     </select>
 
+
+    <!--分页查询 创建活动-->
+    <select id="ActivityPage" resultType="com.wang.tradingplatform.pojo.entity.Circle">
+        SELECT id,user_id,title,picture,start_time,end_time,status FROM circle
+        <!--查询 圈子 选项某一选项-->
+        <where>
+            category = 'Event'
+            <if test="status !=null and status !=''">
+                AND status=#{status}
+            </if>
+        </where>
+        <if test="sortRules != null and sortRules !=''">
+            order by ${sortRules}
+        </if>
+    </select>
+    <!--组团模糊搜索-->
+    <select id="searchTeamUp" resultType="com.wang.tradingplatform.pojo.entity.TeamUp">
+        SELECT teamup.id,
+        teamup.type,
+        teamup.title,
+        teamup.leader,
+        teamup.start_time,
+        teamup.create_at,
+        teamup.update_at,
+        teamup.leader_name
+        FROM teamup
+        <where>
+            <if test="keyword != null and keyword != ''">
+                title LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+    </select>
+    <!--圈子动态模糊搜索-->
+    <select id="searchDynamic" resultType="com.wang.tradingplatform.pojo.entity.Circle">
+        SELECT id, type,CONTENT,create_time FROM circle
+        <where>
+            category='Dynamics'
+            <if test="keyword != null and keyword != ''">
+                AND CONTENT LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+    </select>
+    <!--发布任务模糊搜索-->
+    <select id="searchTask" resultType="com.wang.tradingplatform.pojo.entity.Circle">
+        SELECT id,type,bounty,request_content,note,user_id,create_time FROM circle
+        <where>
+            category='Task'
+            <if test="keyword != null and keyword != ''">
+                AND request_content LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+    </select>
+    <!--创建活动模糊搜索-->
+    <select id="searchActivity" resultType="com.wang.tradingplatform.pojo.entity.Circle">
+        SELECT id,user_id,title,picture,start_time,end_time,status FROM circle
+        <where>
+            category='Event'
+            <if test="keyword != null and keyword != ''">
+                AND title LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+    </select>
+    <!--我的参与 组团-->
+    <!--JoinTeamUp表用来存储某个用户参与了那个组团-->
+    <select id="myJoin" resultType="com.wang.tradingplatform.pojo.entity.TeamUp">
+        SELECT DISTINCT teamup.id,
+        teamup.type,
+        teamup.title,
+        teamup.leader,
+        teamup.start_time,
+        teamup.create_at,
+        teamup.update_at,
+        teamup.leader_name
+        FROM teamup
+        INNER JOIN join_team_up jtu ON teamup.id = jtu.team_up_id
+        WHERE jtu.user_id = #{userId}
+    </select>
+    <!--我的创建 组团-->
+    <select id="myCreate" resultType="com.wang.tradingplatform.pojo.entity.TeamUp">
+        SELECT teamup.id,
+        teamup.type,
+        teamup.title,
+        teamup.leader,
+        teamup.start_time,
+        teamup.create_at,
+        teamup.update_at,
+        teamup.leader_name
+        FROM teamup WHERE leader=#{currentUserId}
+    </select>
+    <!--根据组团id查询对应的详细信息-->
+    <select id="detailedTeamUp" resultType="com.wang.tradingplatform.pojo.entity.TeamUp">
+        SELECT teamup.id,
+        teamup.type,
+        teamup.title,
+        teamup.leader,
+        teamup.start_time,
+        teamup.create_at,
+        teamup.update_at,
+        teamup.leader_name
+        FROM teamup WHERE id=#{id}
+    </select>
+    <!--根据组团id查询对应的评论信息-->
+    <select id="selectComment" resultType="com.wang.tradingplatform.pojo.vo.CommentVO">
+        SELECT
+        ct.id as id,
+        ct.teamup_id as teamup_id,
+        ct.parent_id as parent_id,
+        ct.text as text,
+        ct.picture as picture,
+        ct.son as son,
+        ct.create_time as create_time,
+
+        ct.user_id as user_id,
+        U1.avatar as user_avatar,
+        U1.user_name as user_name,
+
+        ct.reply_user_id as reply_user_id,
+        U2.avatar as reply_user_avatar,
+        U2.user_name as reply_user_name
+        FROM comment_teamup AS ct
+        LEFT JOIN user U1
+        ON U1.user_id = ct.user_id
+        LEFT JOIN user U2 ON U2.user_id = ct.reply_user_id
+        WHERE ct.teamup_id=#{teamUpId}
+    </select>
+    <!--查询指定评论id的全部信息-->
+    <select id="searchCommentById" resultType="com.wang.tradingplatform.pojo.vo.CommentVO">
+        SELECT ct.id as id,
+        ct.teamup_id as teamup_id,
+        ct.parent_id as parent_id,
+        ct.text as text,
+        ct.picture as picture,
+        ct.son as son,
+        ct.create_time as create_time,
+
+        ct.user_id as user_id,
+        U1.avatar as user_avatar,
+        U1.user_name as user_name,
+
+        ct.reply_user_id as reply_user_id,
+        U2.avatar as reply_user_avatar,
+        U2.user_name as reply_user_name
+        FROM comment_teamup AS ct
+        LEFT JOIN user U1
+        ON U1.user_id = ct.user_id
+        LEFT JOIN user U2 ON U2.user_id = ct.reply_user_id
+        WHERE ct.id=#{id}
+    </select>
+    <!--查看该id的评论的父评论的id-->
+    <select id="searchCommentParentId" resultType="java.lang.Integer">
+        SELECT parent_id FROM comment_teamup WHERE id=#{id};
+    </select>
+    <!--查看某条评论之前的所有互动（根据评论id向上追溯祖先评论链）-->
+    <select id="selectCommentInteraction" resultType="com.wang.tradingplatform.pojo.vo.CommentVO">
+        WITH RECURSIVE CommentPath AS (
+        SELECT id,
+        teamup_id,
+        parent_id,
+        text,
+        picture,
+        son,
+        user_id,
+        reply_user_id,
+        create_time,
+        0 AS level
+        FROM comment_teamup
+        WHERE id = #{commentId}
+
+        UNION ALL
+
+        SELECT c.id,
+        c.teamup_id,
+        c.parent_id,
+        c.text,
+        c.picture,
+        c.son,
+        c.user_id,
+        c.reply_user_id,
+        c.create_time,
+        cp.level + 1 AS level
+        FROM comment_teamup c
+        INNER JOIN CommentPath cp ON c.id = cp.parent_id)
+        SELECT cp.id AS id,
+        cp.teamup_id AS teamup_id,
+        cp.parent_id AS parent_id,
+        cp.text AS text,
+        cp.picture AS picture,
+        cp.son AS son,
+        cp.create_time AS create_time,
+        cp.level AS level,
+        cp.user_id AS user_id,
+        U1.avatar AS user_avatar,
+        U1.user_name AS user_name,
+        cp.reply_user_id AS reply_user_id,
+        U2.avatar AS reply_user_avatar,
+        U2.user_name AS reply_user_name
+        FROM CommentPath cp
+        LEFT JOIN user U1 ON U1.user_id = cp.user_id
+        LEFT JOIN user U2 ON U2.user_id = cp.reply_user_id
+        ORDER BY cp.level DESC
+    </select>
+    <!--根据圈子id查询对应的评论信息-->
+    <select id="selectCircleComment" resultType="com.wang.tradingplatform.pojo.vo.CommentCircleVO">
+        SELECT
+        ct.id as id,
+        ct.circle_id as circle_id,
+        ct.parent_id as parent_id,
+        ct.text as text,
+        ct.picture as picture,
+        ct.son as son,
+        ct.create_time as create_time,
+
+        ct.user_id as user_id,
+        U1.avatar as user_avatar,
+        U1.user_name as user_name,
+
+        ct.reply_user_id as reply_user_id,
+        U2.avatar as reply_user_avatar,
+        U2.user_name as reply_user_name
+        FROM comment_circle AS ct
+        LEFT JOIN user U1
+        ON U1.user_id = ct.user_id
+        LEFT JOIN user U2 ON U2.user_id = ct.reply_user_id
+        WHERE ct.circle_id=#{circleId}
+    </select>
+    <!--查看该评论之前的所有互动-->
+    <select id="selectCircleCommentInteraction" resultType="com.wang.tradingplatform.pojo.vo.CommentCircleVO">
+        WITH RECURSIVE CommentPath AS (
+        SELECT id,
+        circle_id,
+        parent_id,
+        text,
+        picture,
+        son,
+        user_id,
+        reply_user_id,
+        create_time,
+        0 AS level
+        FROM comment_circle
+        WHERE id = #{commentId}
+
+        UNION ALL
+
+        SELECT c.id,
+        c.circle_id,
+        c.parent_id,
+        c.text,
+        c.picture,
+        c.son,
+        c.user_id,
+        c.reply_user_id,
+        c.create_time,
+        cp.level + 1 AS level
+        FROM comment_circle c
+        INNER JOIN CommentPath cp ON c.id = cp.parent_id)
+        SELECT cp.id AS id,
+        cp.circle_id AS circle_id,
+        cp.parent_id AS parent_id,
+        cp.text AS text,
+        cp.picture AS picture,
+        cp.son AS son,
+        cp.create_time AS create_time,
+        cp.level AS level,
+        cp.user_id AS user_id,
+        U1.avatar AS user_avatar,
+        U1.user_name AS user_name,
+        cp.reply_user_id AS reply_user_id,
+        U2.avatar AS reply_user_avatar,
+        U2.user_name AS reply_user_name
+        FROM CommentPath cp
+        LEFT JOIN user U1 ON U1.user_id = cp.user_id
+        LEFT JOIN user U2 ON U2.user_id = cp.reply_user_id
+        ORDER BY cp.level DESC
+
+    </select>
+    <!--圈子动态详细信息-->
+    <select id="detailedDynamicUpdates" resultType="com.wang.tradingplatform.pojo.entity.Circle">
+        SELECT id,
+        type,
+        content
+        FROM circle
+        WHERE id=#{id}
+    </select>
+    <!--跑腿任务详细信息-->
+    <select id="detailedTaskUpdates" resultType="com.wang.tradingplatform.pojo.entity.Circle">
+        SELECT id, type,bounty,request_content,note FROM circle WHERE id=#{id}
+    </select>
+    <!--热门活动详细信息-->
+    <select id="detailedActivityUpdates" resultType="com.wang.tradingplatform.pojo.entity.Circle">
+        SELECT id, title,picture,start_time,end_time FROM circle WHERE id=#{id}
+    </select>
 </mapper>

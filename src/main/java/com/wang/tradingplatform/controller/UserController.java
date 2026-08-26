@@ -5,7 +5,6 @@ import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
 import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
 import com.wang.tradingplatform.pojo.entity.User;
-import com.wang.tradingplatform.pojo.vo.ChatListVO;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
 import com.wang.tradingplatform.pojo.vo.Result;
@@ -15,8 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Tag(name = "用户模块")
 @Slf4j
@@ -72,7 +69,7 @@ public class UserController {
      * 得到用户的用户名与账号
      *
      * @param id
-     * @return  Result<User>
+     * @return Result<User>
      */
     @Operation(summary = "得到用户的用户名与账号")
     @PostMapping("/info/{id}")
@@ -81,28 +78,20 @@ public class UserController {
         return Result.success(userService.selectAccountAndName(id));
     }
 
-    //用户会话列表
-    @Operation(summary = "得到对应用户的会话列表")
-    @GetMapping("/chatlist")
-    public Result<List<ChatListVO>> chatList() {
-        log.info("========== 获取用户会话列表 ==========");
-        return Result.success(userService.selectChatList());
-    }
-
-    //获取历史消息
-    @Operation(summary = "根据传递的sessionId获取历史消息")
-    @GetMapping("/history/{id}")
-    public Result<List<ChatListVO>> history(@PathVariable Long id) {
-        log.info("========== 获取历史消息 ==========");
-        return Result.success(userService.selectHistory(id));
-    }
-
     //添加收藏功能
     @Operation(summary = "收藏功能")
     @PostMapping("/favourite/{id}")
     public Result<Integer> favourite(@PathVariable Long id) {
         log.info("========== 收藏功能 ==========");
         return Result.success(userService.favourite(id));
+    }
+
+    //取消收藏功能
+    @Operation(summary = "取消收藏功能")
+    @DeleteMapping("/favouriteRM/{id}")
+    public Result<Integer> favouriteRM(@PathVariable Long id) {
+        log.info("========== 取消收藏功能 ==========");
+        return Result.success(userService.favouriteRM(id));
     }
 
     //查看收藏功能
@@ -115,7 +104,7 @@ public class UserController {
 
     //得到账号基本信息
     @Operation(summary = "得到账号基本信息")
-    @GetMapping("/accountInfo ")
+    @GetMapping("/accountInfo")
     public Result<User> accountInfo(@RequestParam String account) {
         log.info("========== 获取账号基本信息 ==========");
         return Result.success(userService.selectAccountInfo(account));
