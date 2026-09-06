@@ -302,5 +302,15 @@
     <select id="isFavourite" resultType="java.lang.Integer">
         SELECT id FROM favourite WHERE user_id=#{currentUserId} AND item_id=#{id}
     </select>
+    <!--根据传递的商品id查询商品的简略信息，以实现会话列表的商品信息查询-->
+    <select id="selectBriefInfo" resultType="com.wang.tradingplatform.pojo.entity.ProductAssociationVO">
+        SELECT g.goods_desc, g.goods_id, g.price, gi.img_url, gi.img_width, gi.img_height
+        FROM goods g
+        LEFT JOIN goods_image gi ON gi.id = (SELECT gi2.id
+        FROM goods_image gi2
+        WHERE gi2.goods_id = #{goodsId}
+        LIMIT 1)
+        WHERE g.goods_id = #{goodsId}
+    </select>
 
 </mapper>

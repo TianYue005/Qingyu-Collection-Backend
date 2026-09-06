@@ -1,7 +1,6 @@
 package com.wang.tradingplatform.utils;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,7 +51,7 @@ public class JwtTokenUtil {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(secretKey)
                 .build()
-                .parseClaimsJws(token)
+                .parseClaimsJws(token.trim())
                 .getBody();
         return claims.getSubject();
     }
@@ -64,12 +63,22 @@ public class JwtTokenUtil {
     }
 
     // 判断token是否过期
-    private boolean isTokenExpired(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-        return claims.getExpiration().before(new Date());
+    public boolean isTokenExpired(String token) {
+        try {
+            Jws<Claims> claimsJws = Jwts.parserBuilder()
+                    .setSigningKey(secretKey)
+                    .build()
+                    .parseClaimsJws(token);
+
+            // 获取过期时间
+            Date expiration = claimsJws.getBody().getExpiration();
+            return expiration.before(new Date());
+        } catch (ExpiredJwtException e) {
+            // ✅ 令牌过期
+            return true;
+        } catch (UnsupportedJwtException | MalformedJwtException | SignatureException | IllegalArgumentException e) {
+            // ✅ token非法、篡改、空token
+            return true;
+        }
     }
 }

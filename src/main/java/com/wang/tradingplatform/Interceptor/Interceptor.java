@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
+import static io.netty.handler.codec.http.HttpHeaderValidationUtil.validateToken;
+
 @Component
 public class Interceptor implements HandlerInterceptor {
     @Value("${jwt.tokenTitle}")
@@ -37,9 +39,17 @@ public class Interceptor implements HandlerInterceptor {
             return false;
         }
 
-        // 去掉 "Bearer " 前缀
+        // 去掉 "Bearer " 前缀（解析前必须去掉，否则会带空格导致解码失败）
         if (token.startsWith("Bearer ")) {
             token = token.substring(7);
+        }
+
+        // 校验 token 是否过期
+        if (jwtTokenUtil.isTokenExpired(token)) {
+            response.setStatus(401);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write("{\"code\":401,\"message\":\"Token过期，请重新登录\"}");
+            return false;
         }
 
         try {

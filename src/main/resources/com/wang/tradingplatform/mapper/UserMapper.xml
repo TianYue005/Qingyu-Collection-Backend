@@ -20,9 +20,41 @@
         INSERT INTO session_state (session_id,is_read,from_uid,to_uid,group_id,create_time)
         VALUES (#{sessionId},#{isRead},#{fromUid},#{toUid},#{groupId},#{createTime})
     </insert>
+    <!--为两个用户的会话设置最新的相关商品状态-->
+    <insert id="createSessionToGoods">
+        INSERT INTO session_to_goods (SESSION_ID, GOODS_ID)
+        SELECT #{sessionHistory}, #{goodsId}
+        FROM DUAL
+        WHERE NOT EXISTS (
+        SELECT 1
+        FROM (
+        SELECT SESSION_ID
+        FROM session_to_goods
+        WHERE GOODS_ID = #{goodsId}
+        ORDER BY create_time DESC
+        LIMIT 1
+        ) t
+        WHERE t.SESSION_ID = #{sessionHistory}
+        )
+    </insert>
+    <!--存储交易这一请求到数据库-->
+    <insert id="saveTradeRequest">
+        INSERT INTO trade_transaction (goods_id, session_id, trade_state)
+        VALUES (#{goodsId},#{sessionId},0)
+    </insert>
+    <!--拒绝或者接受交易请求-->
+    <!--交易状态 0 未确认 1 已有请求 2已同意请求 3已拒绝-->
+    <update id="HandleTradeRequest">
+        UPDATE trade_transaction SET trade_state=#{select}
+        WHERE goods_id=#{goodsId} AND session_id=#{sessionId}
+    </update>
     <!--修改密码-->
     <update id="updateUserPassword">
         UPDATE `user` SET password = #{password} WHERE user.user_id = #{currentUserId}
+    </update>
+    <!--同步goods表的购买人id-->
+    <update id="updateGoodsSold">
+        UPDATE goods SET sold=#{toUid} WHERE user_id=#{currentUid} AND goods_id=#{goodsId}
     </update>
     <delete id="favouriteRM">
         DELETE FROM favourite WHERE user_id=#{userId} AND item_id=#{id}
@@ -106,13 +138,10 @@
         WHERE (from_uid=#{currentUserId} or to_uid=#{currentUserId}) AND group_id=0
     </select>
     <!--根据session的id列表查找对应的聊天信息 并返回列表数据-->
-    <select id="selectUserChatList" resultType="com.wang.tradingplatform.pojo.vo.ChatMessageListVO">
+    <select id="selectUserChatList" resultType="com.wang.tradingplatform.pojo.entity.ChatMessage">
         SELECT session_id, from_uid, to_uid, content, msg_type, send_time
         FROM chat_message
-        WHERE session_id IN
-        <foreach collection="sessionId" item="id" open="(" close=")" separator=",">
-            #{id}
-        </foreach>
+        WHERE session_id =#{sessionId}
         and group_id = 0
     </select>
     <!--查找请求用户有关的所有点对点对话的另一方的id的列表-->
@@ -125,6 +154,102 @@
     <!--根据求到的id列表查询最后一条消息-->
     <select id="selectEndMessage" resultType="com.wang.tradingplatform.pojo.vo.ChatMessageListVO">
 
+    </select>
+    <!--的到与当前用户对话的用户的id-->
+    <select id="getOtherId" resultType="java.lang.Long">
+        SELECT
+        CASE
+        WHEN from_uid = #{userId} THEN to_uid
+        WHEN to_uid = #{userId} THEN from_uid
+        END AS other_uid
+        FROM session_state
+        WHERE session_id = #{sessionId}
+        AND (from_uid = #{userId} OR to_uid = #{userId})
+        LIMIT 1;
+    </select>
+    <!--会话商品联想
+    前端传递session_id后端根据session_id查看与它相关的商品简略信息并返回
+    只查询与查询当前时间相差1天内最新的那一条消息-->
+    <select id="tradeRequestLenovo" resultType="com.wang.tradingplatform.pojo.entity.ProductAssociationVO">
+        SELECT
+        g.goods_desc,
+        g.goods_id,
+        g.price,
+        gi.img_url,
+        gi.img_width,
+        gi.img_height
+        FROM goods g
+        LEFT JOIN goods_image gi
+        ON gi.id = (
+        SELECT gi2.id
+        FROM goods_image gi2
+        WHERE gi2.goods_id = g.goods_id
+        ORDER BY gi2.id ASC
+        LIMIT 1
+        )
+        WHERE g.goods_id = (
+        SELECT stg.goods_id
+        FROM session_to_goods stg
+        WHERE stg.session_id = #{sessionId}
+        AND stg.create_time >= NOW() - INTERVAL 1 DAY
+        ORDER BY stg.create_time DESC
+        LIMIT 1
+        );
+    </select>
+    <!--查询商品相关信息-->
+    <select id="selectGoodsInfoById" resultType="com.wang.tradingplatform.pojo.entity.ProductAssociationVO">
+        SELECT g.goods_desc, g.goods_id, g.price, gi.img_url, gi.img_width, gi.img_height
+        FROM goods g
+        LEFT JOIN goods_image gi ON gi.id = (SELECT gi2.id
+        FROM goods_image gi2
+        WHERE gi2.goods_id = #{goodsId}
+        LIMIT 1)
+        WHERE g.goods_id = #{goodsId}
+    </select>
+    <!--查询交易信息以及交易状态-->
+    <select id="selectTradeInfo" resultType="com.wang.tradingplatform.pojo.entity.ProductAssociationVO">
+        SELECT g.goods_id,
+        g.goods_desc,
+        g.price,
+        gi.img_url,
+        gi.img_width,
+        gi.img_height,
+        tt.trade_state
+        FROM goods g
+        LEFT JOIN trade_transaction tt
+        ON g.goods_id = tt.goods_id
+        AND tt.session_id = #{sessionId}
+
+        LEFT
+        JOIN (SELECT goods_id, img_url, img_width, img_height
+        FROM goods_image
+        WHERE id IN (SELECT MIN(id)
+        FROM goods_image
+        GROUP BY goods_id)) gi ON g.goods_id = gi.goods_id
+        WHERE g.goods_id = #{goodsId}
+        AND g.is_deleted = 0
+    </select>
+    <!--先看该用户是否有权利拒绝或者同意-->
+    <select id="getPermission" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM goods WHERE user_id=#{currentUserId} AND goods_id=#{goodsId}
+    </select>
+    <!--当前用户的待处理交易-->
+    <select id="userPending" resultType="com.wang.tradingplatform.pojo.entity.Pending">
+        SELECT
+        g.goods_id,
+        g.goods_desc,
+        g.price,
+        g.sold,
+        gi.img_url as picture
+        FROM goods g
+        LEFT JOIN (
+        SELECT
+        goods_id,
+        img_url,
+        ROW_NUMBER() OVER(PARTITION BY goods_id ORDER BY id) AS rn
+        FROM goods_image
+        ) gi ON g.goods_id = gi.goods_id AND gi.rn = 1
+        WHERE g.user_id = #{userId}
     </select>
 
 </mapper>

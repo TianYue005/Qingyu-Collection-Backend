@@ -3,6 +3,7 @@ package com.wang.tradingplatform.services;
 import com.wang.tradingplatform.pojo.dto.UploadItemDTO;
 import com.wang.tradingplatform.pojo.entity.CommentGoods;
 import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
+import com.wang.tradingplatform.pojo.entity.ProductAssociationVO;
 import com.wang.tradingplatform.pojo.vo.CommentGoodsVO;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
@@ -31,4 +32,7 @@ public interface itemsServices {
 
     //查看该评论之前的所有互动
     PageResult<CommentGoodsVO> selectItemCommentInteraction(Long id);
+
+    //根据传递的商品id查询商品的简略信息，以实现会话列表的商品信息查询
+    ProductAssociationVO selectBriefInfo(Long goodsId);
 }

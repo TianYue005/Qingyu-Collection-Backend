@@ -1,9 +1,6 @@
 package com.wang.tradingplatform.mapper;
 
-import com.wang.tradingplatform.pojo.entity.CommentGoods;
-import com.wang.tradingplatform.pojo.entity.Goods;
-import com.wang.tradingplatform.pojo.entity.GoodsImage;
-import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
+import com.wang.tradingplatform.pojo.entity.*;
 import com.wang.tradingplatform.pojo.vo.CommentGoodsVO;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import org.apache.ibatis.annotations.Mapper;
@@ -55,4 +52,7 @@ public interface ItemsMapper {
 
     //查看某商品是否被收藏
     Integer isFavourite(Long id, Long currentUserId);
+
+    //根据传递的商品id查询商品的简略信息，以实现会话列表的商品信息查询b
+    ProductAssociationVO selectBriefInfo(Long goodsId);
 }

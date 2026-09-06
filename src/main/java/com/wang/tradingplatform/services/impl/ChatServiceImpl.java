@@ -1,9 +1,11 @@
 package com.wang.tradingplatform.services.impl;
 
-import com.wang.tradingplatform.annotation.Permission;
 import com.wang.tradingplatform.config.RabbitMQConfig;
 import com.wang.tradingplatform.mapper.ChatMessageMapper;
+import com.wang.tradingplatform.mapper.UserMapper;
 import com.wang.tradingplatform.pojo.entity.ChatMessage;
+import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
+import com.wang.tradingplatform.pojo.entity.ProductAssociationVO;
 import com.wang.tradingplatform.services.ChatService;
 import com.wang.tradingplatform.utils.RedisUtil;
 import com.wang.tradingplatform.utils.SnowflakeIdUtil;
@@ -32,13 +34,15 @@ public class ChatServiceImpl implements ChatService {
     private final ChatMessageMapper chatMessageMapper;
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private final UserMapper userMapper;
 
+    //保存聊天信息到Redis与MySQL  todo --------------------------
     @Override
     public void saveMessage(ChatMessage message) {
         // 1. 生成唯一ID并补齐时间字段  目前两个id（主键id与会话id）是相同的
         long msgId = snowflakeIdUtil.nextId();
         if (message.getSessionId() == null) {
-            message.setSessionId(msgId);
+            throw new RuntimeException("没有传递sessionId");
         }
         message.setId(msgId);
         message.setSendTime(LocalDateTime.now());//发送时间
@@ -52,55 +56,74 @@ public class ChatServiceImpl implements ChatService {
         );
 
         // 3. 同步写入 Redis（当天热数据，极快）
-        saveToRedis(message);
+        saveToRedis(message, message.getSessionId());
+
+        if (message.getMsgType() == 4) {
+            if (message.getGoodsId()==null||message.getSessionId()==null){
+                return;
+            }
+            //说明是想发起一个交易请求
+            //将交易请求同步写入redis与MySQL
+            String redisKey = "TradeState:" + message.getSessionId() + message.getGoodsId();
+            ProductAssociationVO vo = userMapper.selectTradeInfo(message.getGoodsId(), message.getSessionId());
+            redisUtil.set(redisKey, vo);
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.EXCHANGE_NAME,
+                    RabbitMQConfig.ROUTING_KEY_TWO,
+                    message
+            );
+
+        }
+
     }
 
 
-
-    //todo 未检查的代码
+    /**
+     * 得到存在redis的私聊消息
+     *
+     * @param itemQueryParam 需要传递sessionId pageNumber，pageSizemoren
+     * @return
+     */
     @Override
-    @Permission
-    public List<ChatMessage> getPrivateHistory(Long userId1, Long userId2, int limit) {
-        String todayKey = buildPrivateRedisKey(userId1, userId2);
+    public List<ChatMessage> getPrivateHistoryRedis(ItemQueryParam itemQueryParam) {
+        //先生成key
+        String key = buildPrivateRedisKey(itemQueryParam.getSessionId());
+        int pageSize = itemQueryParam.getPageSize();
+        int pageNumber = -itemQueryParam.getPageNumber() * 10;
 
-        // 先从 Redis 取当天消息
-        List<ChatMessage> redisMessages = getMessagesFromRedis(todayKey);
-        if (redisMessages.size() >= limit) {
-            return redisMessages.subList(0, limit);
+        Set<Object> message = redisUtil.zRange(key, pageNumber, pageNumber + pageSize - 1);
+        if (message == null || message.isEmpty()) {//如果是空内容就返回空集合
+            return List.of();
         }
-
-        // Redis 不够，从 MySQL 补
-        int remaining = limit - redisMessages.size();
-        List<ChatMessage> dbMessages = chatMessageMapper.selectPrivateHistory(userId1, userId2, remaining);
-
-        List<ChatMessage> result = new ArrayList<>(redisMessages);
-        result.addAll(dbMessages);
-        return result;
+        return message.stream()
+                .filter(ChatMessage.class::isInstance)
+                .map(ChatMessage.class::cast)
+                .collect(Collectors.toList());
     }
 
     /**
-     * 将消息追加到 Redis zSet，并设置过期时间为当天 24:00
+     * 将消息追加到 Redis zSet，并设置过期时间为当7天后
      */
-    private void saveToRedis(ChatMessage message) {
+    private void saveToRedis(ChatMessage message, Long sessionId) {
         String key;
         if (message.getGroupId() == null || message.getGroupId() == 0) {
             //GroupId为0，则是私聊
-            key = buildPrivateRedisKey(message.getFromUid(), message.getToUid());//发送者id与接收者id
+            key = buildPrivateRedisKey(sessionId);//发送者id与接收者id
         } else {
             //否则是群聊
-            key = buildGroupRedisKey(message.getGroupId());
+            key = buildGroupRedisKey(message.getGroupId(), sessionId);//颧髎代码未检查 todo
         }
         //存入redis的List列表 按照当前时间的时间戳作为score来排序
         redisUtil.zAdd(key, message, System.currentTimeMillis());
         //这里设置过期时间是通过  相同的key 来进行绑定的
-        redisUtil.expire(key, secondsUntilMidnight(), TimeUnit.SECONDS);//设置过期时间  过期时间为今天晚上12点
+        redisUtil.expire(key, 7, TimeUnit.DAYS);//设置过期时间  过期时间为今天晚上12点
     }
 
     /**
      * 从 Redis zSet 中读取消息（尾部最新 100 条，因为是右插入）
      */
     private List<ChatMessage> getMessagesFromRedis(String key) {
-        Set<Object> message = redisUtil.zRange(key, -100, -1);//查询到最新的100条数据
+        Set<Object> message = redisUtil.zRange(key, -30, -1);//查询到最新的30条数据
         if (message == null || message.isEmpty()) {//如果是空内容就返回空集合
             return List.of();
         }
@@ -115,17 +138,15 @@ public class ChatServiceImpl implements ChatService {
     /**
      * 群聊 Redis Key：chat:room:{groupId}:{yyyyMMdd}
      */
-    private String buildGroupRedisKey(Long groupId) {
+    private String buildGroupRedisKey(Long groupId, Long sessionId) {
         return "chat:room:" + groupId + ":" + LocalDate.now().format(DATE_FMT);
     }
 
     /**
      * 私聊 Redis Key：chat:private:{minUid}:{maxUid}:{yyyyMMdd}
      */
-    private String buildPrivateRedisKey(Long uid1, Long uid2) {
-        long minUid = Math.min(uid1, uid2);
-        long maxUid = Math.max(uid1, uid2);
-        return "chat:private:" + minUid + ":" + maxUid + ":" + LocalDate.now().format(DATE_FMT);
+    private String buildPrivateRedisKey(Long sessionId) {
+        return "chat:private:" + sessionId;
     }
 
     /**
@@ -136,4 +157,6 @@ public class ChatServiceImpl implements ChatService {
         LocalDateTime midnight = LocalDateTime.of(LocalDate.now().plusDays(1), LocalTime.MIDNIGHT);
         return ChronoUnit.SECONDS.between(now, midnight);
     }
+
+
 }

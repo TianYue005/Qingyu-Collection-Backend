@@ -112,7 +112,6 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setVirtualHost("/");
         // 客户端发送消息到服务端的接口前缀
         registry.setApplicationDestinationPrefixes("/app");
-        // 点对点消息的用户前缀，convertAndSendToUser 会路由到 /user/{username}/...
         registry.setUserDestinationPrefix("/user");
     }
 }

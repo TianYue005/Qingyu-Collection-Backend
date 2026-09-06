@@ -2,6 +2,7 @@ package com.wang.tradingplatform.listener;
 
 import com.wang.tradingplatform.config.RabbitMQConfig;
 import com.wang.tradingplatform.mapper.ChatMessageMapper;
+import com.wang.tradingplatform.mapper.UserMapper;
 import com.wang.tradingplatform.pojo.entity.ChatMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 public class ChatMessageConsumer {
 
     private final ChatMessageMapper chatMessageMapper;
+    private final UserMapper userMapper;
 
     /**
      * 监听了队列  QUEUE_NAME = "chat.mysql.queue" 一旦有消息就会自动运行
@@ -30,9 +32,20 @@ public class ChatMessageConsumer {
             } catch (Exception e) {
                 log.error("消息落库失败: id={}, error={}", message.getId(), e.getMessage());
             }
-        }else{
+        } else {
             //TODO
             System.out.println("群聊相关功能为完善");
+        }
+    }
+
+    //将交易请求同步到mysql（同步到trade_transaction表）
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME_TWO)
+    public void tradeRequestSave(ChatMessage message) {
+        try {
+            userMapper.saveTradeRequest(message);
+            log.info("消息落库成功: id={}", message.getId());
+        } catch (Exception e) {
+            log.error("消息落库失败: id={}, error={}", message.getId(), e.getMessage());
         }
     }
 }

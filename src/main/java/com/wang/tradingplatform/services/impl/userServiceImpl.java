@@ -2,7 +2,6 @@ package com.wang.tradingplatform.services.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
-import com.wang.tradingplatform.annotation.Permission;
 import com.wang.tradingplatform.mapper.ItemsMapper;
 import com.wang.tradingplatform.mapper.UserMapper;
 import com.wang.tradingplatform.pojo.dto.LoginDTO;
@@ -16,14 +15,15 @@ import com.wang.tradingplatform.utils.*;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 @Service
@@ -35,6 +35,7 @@ public class userServiceImpl implements userService {
     private final SnowflakeIdUtil snowflakeIdUtil;
     private final RedisUtil redisUtil;
     private final ItemsMapper itemsMapper;
+    private final ChatServiceImpl chatService;
 
     /**
      * 注册功能
@@ -105,7 +106,6 @@ public class userServiceImpl implements userService {
      * @return
      */
     @Override
-    @Permission
     public String selectName(String account) {
         return userMapper.selectName(account);
     }
@@ -117,7 +117,6 @@ public class userServiceImpl implements userService {
      * @return
      */
     @Override
-    @Permission
     public Long selectId(String account) {
         return userMapper.findIDByAccount(account);
     }
@@ -129,7 +128,6 @@ public class userServiceImpl implements userService {
      * @return
      */
     @Override
-    @Permission
     public User selectAccountAndName(Long userId) {
         return userMapper.selectAccountAndName(userId);
     }
@@ -140,11 +138,10 @@ public class userServiceImpl implements userService {
      * @return 会话列表信息
      */
     @Override
-    @Permission
     public List<ChatMessageListVO> selectChatList() {
         Long id = UserContext.getCurrentUserId();
-        List<ChatMessageListVO> list= userMapper.selectChatList(id);
-        System.out.println("------------------------------------------");
+        List<ChatMessageListVO> list = userMapper.selectChatList(id);
+        System.out.println("------------------会话列表信息------------------------");
         System.out.println(list);
         return list;
     }
@@ -156,19 +153,25 @@ public class userServiceImpl implements userService {
      * @return
      */
     @Override
-    @Permission
-    public PageResult<ChatMessageListVO> selectHistory(ItemQueryParam itemQueryParam) {
+    public PageResult<ChatMessage> selectHistory(ItemQueryParam itemQueryParam) {
         //查找该用户的所有有关联的sessionId
         List<Long> sessionIdList = userMapper.selectUserSessionList(UserContext.getCurrentUserId());
         //判断传递的sessionId是否真的属于该用户
         if (sessionIdList.contains(itemQueryParam.getSessionId())) {
             //该用户传递的sessionId确实是该用户的
-            try (Page<ChatMessageListVO> page = PageHelper.startPage(
+            List<ChatMessage> chatMessages = chatService.getPrivateHistoryRedis(itemQueryParam);
+            //如果redis查到的数据足够则直接返回redis的数据
+            if (chatMessages.size() == itemQueryParam.getPageSize()) {
+                //要求redis查到的数据足够要求的数目
+                return new PageResult<ChatMessage>((long) itemQueryParam.getPageSize(), chatMessages);
+            }
+            //redis的数据不够则查看mysql的数据
+            try (Page<ChatMessage> page = PageHelper.startPage(
                     itemQueryParam.getPageNumber(),
                     itemQueryParam.getPageSize()
             )) {
-                List<ChatMessageListVO> list1 = userMapper.selectUserChatList(List.of(itemQueryParam.getSessionId()));
-                return new PageResult<ChatMessageListVO>(page.getTotal(), list1);
+                List<ChatMessage> list1 = userMapper.selectUserChatList(itemQueryParam.getSessionId());
+                return new PageResult<ChatMessage>(page.getTotal(), list1);
             }
         }
         //根据结果返回信息
@@ -182,7 +185,6 @@ public class userServiceImpl implements userService {
      * @return
      */
     @Override
-    @Permission
     public int favourite(Long id) {
         return userMapper.addFavourite(UserContext.getCurrentUserId(), id);
     }
@@ -193,7 +195,6 @@ public class userServiceImpl implements userService {
      * @return
      */
     @Override
-    @Permission
     public PageResult<GoodsVO> selectFavourite(ItemQueryParam itemQueryParam) {
         //使用PageHelper进行分页处理（try-with-resources确保ThreadLocal资源被清理）
         try (Page<Goods> page = PageHelper.startPage(
@@ -256,16 +257,31 @@ public class userServiceImpl implements userService {
     }
 
     //用户点击了发起会话的按钮
+
+    /**
+     * 不仅在数据库添加了会话数据
+     * 也为会话的关联表设置了相关商品字段（如果传递了的话）
+     *
+     * @param toUserId
+     * @param goodsId
+     * @return
+     */
     @Override
-    public Long createChatSession(Long toUserId) {
+    @Transactional(rollbackFor = Exception.class)
+    public Long createChatSession(Long toUserId, Long goodsId) {
+        if (Objects.equals(toUserId, UserContext.getCurrentUserId())) {
+            throw new RuntimeException("不允许与自己发起会话");
+        }
+
         SnowflakeIdUtil util = new SnowflakeIdUtil();
         long sessionId = 0L;
         Long CurrentUserId = UserContext.getCurrentUserId();
         //先看现在双方是否有会话
+        //如果有会话就返回会话的sessionId
         Long sessionHistory = userMapper.selectSessionHistory(toUserId, CurrentUserId);
         if (sessionHistory == null) {
             //说明没有历史会话
-            sessionId = util.nextId();
+            sessionId = util.nextId();//此处得到将来要设置的sessionId
 
             SessionState Session = new SessionState();
             Session.setGroupId(0L);//设置私聊
@@ -273,11 +289,85 @@ public class userServiceImpl implements userService {
             Session.setFromUid(CurrentUserId);//发送用户的id
             Session.setToUid(toUserId);//接受用户的id
             Session.setCreateTime(LocalDateTime.now());//会话创建时间
-            Session.setIsRead(0L);//设为未读 TODO先这个样子 忘了之前怎么想的了
+            Session.setIsRead(0L);//设为未读 TODO先这个样子 忘了之前怎么计划的了
 
             userMapper.createChatSession(Session);
+            //为两个用户的会话设置最新的相关商品状态
+            userMapper.createSessionToGoods(sessionId, goodsId);
             sessionHistory = userMapper.selectSessionHistory(toUserId, CurrentUserId);
         }
+        //为两个用户的会话设置最新的相关商品状态
+        userMapper.createSessionToGoods(sessionHistory, goodsId);
         return sessionHistory;
+    }
+
+    //的到与当前用户对话的用户的id
+    @Override
+    public String getOtherId(Long sessionId, Long currentUserId) {
+        return String.valueOf(userMapper.getOtherId(sessionId, currentUserId));
+    }
+
+    /**
+     * 会话商品联想
+     * 前端传递session_id后端根据session_id查看与它相关的商品简略信息并返回
+     * 只查询与查询当前时间相差1天内最新的那一条消息
+     *
+     * @return 返回的是商品部分信息 商品名，商品图片其中的一张，商品id，商品价格
+     */
+    @Override
+    public ProductAssociationVO tradeRequestLenovo(Long sessionId) {
+        System.out.println("会话商品联想传递的sessionid" + sessionId);
+        ProductAssociationVO g = userMapper.tradeRequestLenovo(sessionId);
+        if (g == null) {
+            System.out.println("商品联想内容为空");
+        }
+        return g;
+    }
+
+
+
+    /**
+     * 查询交易信息以及交易状态
+     * 前端传递商品id，返回商品简略信息以及交易状态
+     * 0未处理 1已接受 2已拒绝
+     */
+    @Override
+    public ProductAssociationVO selectTradeState(Long goodsId, Long session_id) {
+        String redisKey = "TradeState:" + session_id + goodsId;
+        ProductAssociationVO vo = (ProductAssociationVO) redisUtil.get(redisKey);
+        if (vo != null) {
+            //如果redis返回了数据则直接返回
+            System.out.println("redis有数据");
+            return vo;
+        }
+        redisUtil.set(redisKey, vo);
+        System.out.println("redis无数据，从mysql获取");
+        vo = userMapper.selectTradeInfo(goodsId, session_id);
+        return vo;
+    }
+
+    //拒绝或者接受交易请求
+    //交易状态 0 未确认 1 已有请求 2已同意请求 3已拒绝
+    @Override
+    public void HandleTradeRequest(Integer select, Long goods_id, Long session_id) {
+        userMapper.HandleTradeRequest(select, goods_id, session_id);
+    }
+
+    //先看该用户是否有权利拒绝或者同意
+    @Override
+    public Integer getPermission(Long currentUserId, Long goodsId) {
+        return userMapper.getPermission(currentUserId, goodsId);
+    }
+
+    //同步goods表的购买人id
+    @Override
+    public void saleGoods(Long goodsId, Long toUid, Long currentUid) {
+        userMapper.updateGoodsSold(goodsId,toUid,currentUid);
+    }
+
+    //当前用户的待处理交易
+    @Override
+    public List<Pending> userPending(Long userId) {
+        return userMapper.userPending(userId);
     }
 }

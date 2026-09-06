@@ -2,8 +2,7 @@ package com.wang.tradingplatform.services;
 
 import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
-import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
-import com.wang.tradingplatform.pojo.entity.User;
+import com.wang.tradingplatform.pojo.entity.*;
 import com.wang.tradingplatform.pojo.vo.ChatMessageListVO;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
@@ -56,7 +55,7 @@ public interface userService {
      * @param itemQueryParam
      * @return
      */
-    PageResult<ChatMessageListVO> selectHistory(ItemQueryParam itemQueryParam);
+    PageResult<ChatMessage> selectHistory(ItemQueryParam itemQueryParam);
 
     /**
      * 添加收藏功能
@@ -93,5 +92,30 @@ public interface userService {
     Integer favouriteRM(Long id);
 
     //发起会话
-    Long createChatSession(Long toUserId);
+    Long createChatSession(Long toUserId,Long goodsId);
+
+    //的到与当前用户对话的用户的id
+    String getOtherId(Long sessionId, Long currentUserId);
+
+    /**
+     * 会话商品联想
+     * 前端传递session_id后端根据session_id查看与它相关的商品简略信息并返回
+     *
+     */
+    ProductAssociationVO tradeRequestLenovo(Long sessionId);
+
+    //交易信息以及交易状态
+    ProductAssociationVO selectTradeState(Long goodsId,Long session_id);
+
+    //拒绝或者接受交易请求
+    void HandleTradeRequest(Integer select, Long goods_id,Long session_id);
+
+    //先看该用户是否有权利拒绝或者同意交易
+    Integer getPermission(Long currentUserId, Long goodsId);
+
+    //将某一商品的状态改为已经出售
+    void saleGoods(Long goodsId,Long toUid,Long currentUid);
+
+    //当前用户的待处理交易
+    List<Pending> userPending(Long userId);
 }

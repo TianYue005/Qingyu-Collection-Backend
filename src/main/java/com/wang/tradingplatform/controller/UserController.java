@@ -4,16 +4,22 @@ package com.wang.tradingplatform.controller;
 import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
 import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
+import com.wang.tradingplatform.pojo.entity.Pending;
 import com.wang.tradingplatform.pojo.entity.User;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
 import com.wang.tradingplatform.pojo.vo.Result;
 import com.wang.tradingplatform.services.userService;
+import com.wang.tradingplatform.utils.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 @Tag(name = "用户模块")
 @Slf4j
@@ -117,5 +123,23 @@ public class UserController {
         log.info("========== 修改密码 ==========");
         userService.updatePassword(password);
         return Result.success();
+    }
+
+    //查看用户相关的评价 这个评论是指在交易完成之后 双方的互相评价  todo
+    @Operation(summary = "查看用户相关的评价")
+    @GetMapping("/review/{userId}")
+    public void selectReview() {
+        System.out.println("未完成");
+    }
+
+    //当前用户的待处理交易
+    @Operation(summary = "当前用户的待处理交易")
+    @GetMapping("/pending/{userId}")
+    public List<Pending> userPending(@PathVariable Long userId) {
+        log.info("========== 当前用户的待处理交易 ==========");
+        if (Objects.equals(userId, UserContext.getCurrentUserId())) {
+            return userService.userPending(userId);
+        }
+        return List.of();
     }
 }
