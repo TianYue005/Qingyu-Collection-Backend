@@ -134,12 +134,11 @@ public class UserController {
 
     //当前用户的待处理交易
     @Operation(summary = "当前用户的待处理交易")
-    @GetMapping("/pending/{userId}")
-    public List<Pending> userPending(@PathVariable Long userId) {
+    @GetMapping("/pending/wait")
+    public List<Pending> userPending() {
         log.info("========== 当前用户的待处理交易 ==========");
-        if (Objects.equals(userId, UserContext.getCurrentUserId())) {
-            return userService.userPending(userId);
-        }
-        return List.of();
+        return userService.userPending(UserContext.getCurrentUserId());
     }
+
+    //评论卖家
 }

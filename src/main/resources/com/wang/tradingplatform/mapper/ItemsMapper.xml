@@ -193,7 +193,7 @@
                 ORDER BY ${param.sortRules}
             </when>
             <otherwise>
-                ORDER BY f.create_time DESC  <!-- 默认按收藏时间倒序 -->
+                ORDER BY f.id DESC  <!-- 默认按收藏时间倒序（收藏表无 create_time，用自增主键近似） -->
             </otherwise>
         </choose>
     </select>
@@ -311,6 +311,39 @@
         WHERE gi2.goods_id = #{goodsId}
         LIMIT 1)
         WHERE g.goods_id = #{goodsId}
+    </select>
+    <!--我已经卖出的商品-->
+    <select id="selectMySold" resultType="com.wang.tradingplatform.pojo.vo.GoodsVO">
+        SELECT g.goods_id, g.goods_desc, gi.img_url, gi.img_width, gi.img_height
+        FROM goods g
+        LEFT JOIN (SELECT goods_id,
+        img_url,
+        img_width,
+        img_height,
+        ROW_NUMBER() OVER (PARTITION BY goods_id ORDER BY id ASC) AS rn
+        FROM goods_image) gi ON g.goods_id = gi.goods_id AND gi.rn = 1
+        WHERE g.user_id=#{currentUserId} AND g.finished IS NOT NULL
+    </select>
+    <!--我已经购买的商品-->
+    <select id="selectMyPurchase" resultType="com.wang.tradingplatform.pojo.vo.GoodsVO">
+        SELECT
+        g.goods_id,
+        g.goods_desc,
+        gi.img_url,
+        gi.img_width,
+        gi.img_height,
+        IF( EXISTS(SELECT 1 FROM evaluate ev WHERE ev.goods_id = g.goods_id), 1, 0 ) AS has_evaluate
+        FROM goods g
+        LEFT JOIN (
+        SELECT
+        goods_id,
+        img_url,
+        img_width,
+        img_height,
+        ROW_NUMBER() OVER (PARTITION BY goods_id ORDER BY id ASC) AS rn
+        FROM goods_image
+        ) gi ON g.goods_id = gi.goods_id AND gi.rn = 1
+        WHERE g.sold = #{currentUserId} AND g.finished IS NOT NULL
     </select>
 
 </mapper>

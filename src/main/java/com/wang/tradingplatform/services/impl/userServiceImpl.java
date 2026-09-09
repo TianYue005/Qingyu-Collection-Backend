@@ -14,17 +14,17 @@ import com.wang.tradingplatform.services.userService;
 import com.wang.tradingplatform.utils.*;
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class userServiceImpl implements userService {
@@ -196,35 +196,9 @@ public class userServiceImpl implements userService {
      */
     @Override
     public PageResult<GoodsVO> selectFavourite(ItemQueryParam itemQueryParam) {
-        //使用PageHelper进行分页处理（try-with-resources确保ThreadLocal资源被清理）
-        try (Page<Goods> page = PageHelper.startPage(
-                itemQueryParam.getPageNumber(),
-                itemQueryParam.getPageSize(),
-                itemQueryParam.getSortRules())) {
-            //调用mapper接口执行查询 查到的数据是没有图片的
-            List<GoodsVO> goodsList = itemsMapper.selectFavourite(itemQueryParam, UserContext.getCurrentUserId());
-            if (goodsList.isEmpty()) {
-                return new PageResult<GoodsVO>(page.getTotal(), Collections.emptyList());
-            }
-            // 2. 提取所有的 goodsId
-            List<Long> goodsIds = goodsList.stream()
-                    .map(GoodsVO::getGoodsId)
-                    .toList();
-            // 3. 批量查询图片并按 goodsId 分组
-            List<GoodsImage> images = itemsMapper.selectImagesByGoodsIds(goodsIds);
-            Map<Long, List<GoodsImage>> imageMap = images.stream()
-                    .collect(Collectors.groupingBy(GoodsImage::getGoodsId));
-            // 4. 回填图片到商品列表中
-            for (GoodsVO goods : goodsList) {//这里的goodsList是没有图片数据的
-                goods.setImgList(imageMap.getOrDefault(goods.getGoodsId(), Collections.emptyList()));
-                /*
-                根据循环到的goods.getGoodsId()得到对应的List<GoodsImage>
-                getOrDefault是得到或者默认值，即要么根据第一个参数goods.getGoodsId()得到想要的内容
-                否则得到一个准备好的默认值Collections.emptyList()
-                */
-            }
-            //构造并返回分页结果对象，包含总记录数和当前页数据
-            return new PageResult<GoodsVO>(page.getTotal(), goodsList);
+        try (Page<Goods> page = PageHelper.startPage(itemQueryParam.getPageNumber(), itemQueryParam.getPageSize())) {
+            List<GoodsVO> list = userMapper.selectFavourite(UserContext.getCurrentUserId());
+            return new PageResult<>(page.getTotal(), list);
         }
     }
 
@@ -325,7 +299,6 @@ public class userServiceImpl implements userService {
     }
 
 
-
     /**
      * 查询交易信息以及交易状态
      * 前端传递商品id，返回商品简略信息以及交易状态
@@ -362,12 +335,60 @@ public class userServiceImpl implements userService {
     //同步goods表的购买人id
     @Override
     public void saleGoods(Long goodsId, Long toUid, Long currentUid) {
-        userMapper.updateGoodsSold(goodsId,toUid,currentUid);
+        userMapper.updateGoodsSold(goodsId, toUid, currentUid);
     }
 
     //当前用户的待处理交易
     @Override
     public List<Pending> userPending(Long userId) {
-        return userMapper.userPending(userId);
+        List<Pending> List1 = new ArrayList<>(userMapper.userPending(userId));
+        List<Pending> List2 = new ArrayList<>(userMapper.userPending2(userId));
+        log.error(List1.toString());
+        log.info("-------------------------------------------");
+        log.error(List2.toString());
+        List<Pending> list = new ArrayList<>(List1);
+        list.addAll(List2);
+        log.error(list.toString());
+        return list;
+    }
+
+    //填写别人的验证码  自己是第一个则返回1 自己是第二个则返回2 其他都为错误
+    @Override
+    public Integer putOtherVerifyCode(TradePairUp tradePairUp) {
+        //先看自己之前是不是有人填写过了，如果没有就填写。如果有就进行下一步
+        //计算出合理的key
+        Long myId = UserContext.getCurrentUserId();
+        Long otherId = getOppositeId(myId, tradePairUp.getGoodsId());
+        String key = "MyVerifyCode" + otherId + myId;
+        log.info("========== 填写验证码04 ==========");
+        Object code = redisUtil.get(key);
+        if (code != null && code.equals(tradePairUp.getOtherVerifyCode())) {
+            log.info("========== 填写验证码01 ==========");
+            //传递的验证码确实是与对方契合
+            String verifyKey = "Verify" + tradePairUp.getGoodsId();
+            Integer flag = (Integer) redisUtil.get(verifyKey);
+            if (flag != null && flag == 1) {
+                log.info("========== 填写验证码02 ==========");
+                //对方已经填写过一次了，自己是第二个 此时应该完成交易并返回
+                userMapper.FinishTrade(tradePairUp.getGoodsId());
+                return 2;
+            } else {
+                //说明自己是第一个  此时应该开始仪式
+                log.info("========== 填写验证码03 ==========");
+                redisUtil.set(verifyKey, 1, 5, TimeUnit.MINUTES);
+                return 1;
+            }
+        }
+        return 3;
+    }
+
+    //根据自己的id与商品id得到对面的id
+    @Override
+    public Long getOppositeId(Long myId, Long goodsId) {
+        Long id = userMapper.getOppositeId(myId, goodsId);
+        if (id != null) {
+            return id;
+        }
+        return myId;
     }
 }

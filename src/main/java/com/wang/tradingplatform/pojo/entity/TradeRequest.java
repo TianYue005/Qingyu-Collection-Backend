@@ -11,5 +11,5 @@ public class TradeRequest {
     private Long sessionId;
     private Integer select;
     private Long toUid;
-    private Integer tradeState;
+    private Integer tradeState; //交易状态 0 未确认 1 已有请求 2已同意请求 3已拒绝 4交易已完成
 }

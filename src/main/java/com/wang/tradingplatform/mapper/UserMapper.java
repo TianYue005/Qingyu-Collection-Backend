@@ -2,6 +2,7 @@ package com.wang.tradingplatform.mapper;
 
 import com.wang.tradingplatform.pojo.entity.*;
 import com.wang.tradingplatform.pojo.vo.ChatMessageListVO;
+import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -68,7 +69,7 @@ public interface UserMapper {
      * @param currentUserId 用户的Id
      * @return 返回的是用户收藏的商品的 商品id
      */
-    List<Long> selectFavourite(Long currentUserId);
+    List<GoodsVO> selectFavourite(Long currentUserId);
 
     /**
      * 得到账号基本信息
@@ -139,4 +140,13 @@ public interface UserMapper {
 
     //当前用户的待处理交易
     List<Pending> userPending(Long userId);
+
+    //根据自己的id与商品id得到对面的id
+    Long getOppositeId(Long myId, Long goodsId);
+
+    //完成交易并返回
+    void FinishTrade(Long goodsId);
+
+    //当前用户的待处理交易2
+    List<Pending> userPending2(Long userId);
 }

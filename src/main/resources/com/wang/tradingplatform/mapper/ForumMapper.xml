@@ -145,14 +145,15 @@
     </select>
     <!--我的创建 组团-->
     <select id="myCreate" resultType="com.wang.tradingplatform.pojo.entity.TeamUp">
-        SELECT teamup.id,
-        teamup.type,
-        teamup.title,
-        teamup.leader,
-        teamup.start_time,
-        teamup.create_at,
-        teamup.update_at,
-        teamup.leader_name
+        SELECT
+        id,
+        type,
+        title,
+        leader,
+        start_time,
+        create_at,
+        update_at,
+        leader_name
         FROM teamup WHERE leader=#{currentUserId}
     </select>
     <!--根据组团id查询对应的详细信息-->
@@ -216,7 +217,7 @@
     </select>
     <!--查看该id的评论的父评论的id-->
     <select id="searchCommentParentId" resultType="java.lang.Integer">
-        SELECT parent_id FROM comment_teamup WHERE id=#{id};
+        SELECT parent_id FROM comment_teamup WHERE id=#{id}
     </select>
     <!--查看某条评论之前的所有互动（根据评论id向上追溯祖先评论链）-->
     <select id="selectCommentInteraction" resultType="com.wang.tradingplatform.pojo.vo.CommentVO">
@@ -356,5 +357,26 @@
     <!--热门活动详细信息-->
     <select id="detailedActivityUpdates" resultType="com.wang.tradingplatform.pojo.entity.Circle">
         SELECT id, title,picture,start_time,end_time FROM circle WHERE id=#{id}
+    </select>
+    <!--查看我参加的圈子-->
+    <select id="myParticipateCircle" resultType="com.wang.tradingplatform.pojo.entity.Circle">
+        SELECT id,
+        user_id,
+        type,
+        content,
+        bounty,
+        request_content,
+        note,
+        title,
+        picture,
+        start_time,
+        end_time,
+        create_time,
+        update_time,
+        status,
+        category,
+        total
+        FROM circle
+        WHERE id IN (SELECT circle_id FROM join_circle WHERE user_id = #{currentUserId})
     </select>
 </mapper>

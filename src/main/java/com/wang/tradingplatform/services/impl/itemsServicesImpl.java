@@ -82,7 +82,7 @@ public class itemsServicesImpl implements itemsServices {
         GoodsVO goodsById = itemsMapper.findGoodsById(id);
         //查看某商品是否被收藏
         Integer is = itemsMapper.isFavourite(id, UserContext.getCurrentUserId());
-        if (is != null && id != 0 ) {
+        if (is != null && id != 0) {
             goodsById.setFavourite(true);
         }
         return goodsById;
@@ -132,5 +132,24 @@ public class itemsServicesImpl implements itemsServices {
     @Override
     public ProductAssociationVO selectBriefInfo(Long goodsId) {
         return itemsMapper.selectBriefInfo(goodsId);
+    }
+
+
+    //我已经卖出的商品
+    @Override
+    public PageResult<GoodsVO> selectMySold(ItemQueryParam itemQueryParam) {
+        try (Page<GoodsVO> page = PageHelper.startPage(itemQueryParam.getPageNumber(), 10)) {
+            List<GoodsVO> list = itemsMapper.selectMySold(UserContext.getCurrentUserId());
+            return new PageResult<>(page.getTotal(), list);
+        }
+    }
+
+    //我已经购买的商品
+    @Override
+    public PageResult<GoodsVO> selectMyPurchase(ItemQueryParam itemQueryParam) {
+        try (Page<GoodsVO> page = PageHelper.startPage(itemQueryParam.getPageNumber(), 10)) {
+            List<GoodsVO> list = itemsMapper.selectMyPurchase(UserContext.getCurrentUserId());
+            return new PageResult<>(page.getTotal(), list);
+        }
     }
 }

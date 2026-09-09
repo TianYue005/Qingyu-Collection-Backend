@@ -275,4 +275,15 @@ public class ForumServiceImpl implements ForumService {
             throw new RuntimeException();
         }
     }
+
+    //查看我参加的圈子
+    @Override
+    public PageResult<Circle> myParticipateCircle() {
+        try (Page<Circle> page = PageHelper.startPage(
+                1, 10
+        )) {
+            List<Circle> CircleList = forumMapper.myParticipateCircle(UserContext.getCurrentUserId());
+            return new PageResult<>(page.getTotal(), CircleList);
+        }
+    }
 }

@@ -56,6 +56,10 @@
     <update id="updateGoodsSold">
         UPDATE goods SET sold=#{toUid} WHERE user_id=#{currentUid} AND goods_id=#{goodsId}
     </update>
+    <!--完成交易并返回-->
+    <update id="FinishTrade">
+        UPDATE goods SET finished=1 WHERE goods_id=#{goodsId}
+    </update>
     <delete id="favouriteRM">
         DELETE FROM favourite WHERE user_id=#{userId} AND item_id=#{id}
     </delete>
@@ -73,8 +77,16 @@
     </select>
 
     <!--查看收藏功能-->
-    <select id="selectFavourite" resultType="java.lang.Long">
-        select item_id from favourite where user_id = #{userId}
+    <select id="selectFavourite" resultType="com.wang.tradingplatform.pojo.vo.GoodsVO">
+        SELECT g.goods_id, g.goods_desc, g.price, g.original_price, gi.img_url, gi.img_width, img_height
+        FROM goods g
+        LEFT JOIN (SELECT goods_id,
+        img_url,
+        img_width,
+        img_height,
+        ROW_NUMBER() OVER (PARTITION BY goods_id ORDER BY id ASC) AS rn
+        FROM goods_image) gi ON g.goods_id = gi.goods_id AND gi.rn = 1
+        WHERE g.goods_id IN (SELECT item_id FROM favourite WHERE favourite.user_id = #{currentUserId})
     </select>
     <!--得到账号基本信息-->
     <select id="selectAccountInfo" resultType="com.wang.tradingplatform.pojo.entity.User">
@@ -165,7 +177,7 @@
         FROM session_state
         WHERE session_id = #{sessionId}
         AND (from_uid = #{userId} OR to_uid = #{userId})
-        LIMIT 1;
+        LIMIT 1
     </select>
     <!--会话商品联想
     前端传递session_id后端根据session_id查看与它相关的商品简略信息并返回
@@ -194,7 +206,7 @@
         AND stg.create_time >= NOW() - INTERVAL 1 DAY
         ORDER BY stg.create_time DESC
         LIMIT 1
-        );
+        )
     </select>
     <!--查询商品相关信息-->
     <select id="selectGoodsInfoById" resultType="com.wang.tradingplatform.pojo.entity.ProductAssociationVO">
@@ -235,21 +247,47 @@
     </select>
     <!--当前用户的待处理交易-->
     <select id="userPending" resultType="com.wang.tradingplatform.pojo.entity.Pending">
-        SELECT
-        g.goods_id,
+        SELECT g.goods_id,
         g.goods_desc,
         g.price,
-        g.sold,
         gi.img_url as picture
         FROM goods g
-        LEFT JOIN (
-        SELECT
-        goods_id,
+        LEFT JOIN (SELECT goods_id,
         img_url,
-        ROW_NUMBER() OVER(PARTITION BY goods_id ORDER BY id) AS rn
+        ROW_NUMBER() OVER (PARTITION BY goods_id ORDER BY id) AS rn
+        FROM goods_image) gi ON g.goods_id = gi.goods_id AND gi.rn = 1
+        WHERE g.user_id = #{userId}
+        AND g.finished IS NULL
+        AND (g.sold IS NOT NULL AND g.sold != 0)
+    </select>
+    <!--根据自己的id与商品id得到对面的id-->
+    <!--根据自己的id与商品id得到对面的id-->
+    <select id="getOppositeId" resultType="java.lang.Long">
+        SELECT
+        CASE
+        WHEN user_id = #{myId} THEN sold
+        WHEN sold = #{myId} THEN user_id
+        ELSE NULL
+        END
+        FROM goods
+        WHERE goods_id = #{goodsId}
+        LIMIT 1
+    </select>
+    <!--当前用户的待处理交易2-->
+    <select id="userPending2" resultType="com.wang.tradingplatform.pojo.entity.Pending">
+        SELECT g.goods_id,
+        g.goods_desc,
+        g.price,
+        gi.img_url AS picture
+        FROM goods g
+        LEFT JOIN (
+        SELECT goods_id,
+        img_url,
+        ROW_NUMBER() OVER (PARTITION BY goods_id ORDER BY id ASC) AS rn
         FROM goods_image
         ) gi ON g.goods_id = gi.goods_id AND gi.rn = 1
-        WHERE g.user_id = #{userId}
+        WHERE g.sold = #{userId}
+        AND g.finished IS NULL
     </select>
 
 </mapper>

@@ -220,4 +220,12 @@ public class ForumController {
         PageResult<CommentCircleVO> page = forumService.selectCircleCommentInteraction(id);
         return Result.success(page);
     }
+    //--------------------------------------------------------------------------------
+    //查看我参加的圈子
+    @Operation(summary = "查看我参加的圈子")
+    @GetMapping("/select/myParticipateCircle")
+    public Result<PageResult<Circle>> myParticipateCircle() {
+        PageResult<Circle> page = forumService.myParticipateCircle();
+        return Result.success(page);
+    }
 }

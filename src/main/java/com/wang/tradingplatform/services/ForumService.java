@@ -74,4 +74,7 @@ public interface ForumService {
 
     //圈子动态详细信息
     Circle detailedCircleUpdates(Integer id,String option);
+
+    //查看我参加的圈子
+    PageResult<Circle> myParticipateCircle();
 }

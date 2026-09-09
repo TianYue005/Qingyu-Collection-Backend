@@ -23,4 +23,5 @@ public class Goods {
     private Integer isDeleted;//逻辑删除 0未删 1已删
     private List<GoodsImage> images;//关联的图片列表
     private Long sold;//0说明没有卖出，非0则卖给了sold所指向的用户id
+    private Integer finished;//交易是否完成（null未完成）
 }

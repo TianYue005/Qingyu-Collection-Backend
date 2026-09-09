@@ -6,28 +6,29 @@ import com.wang.tradingplatform.pojo.vo.PageResult;
 import com.wang.tradingplatform.pojo.vo.Result;
 import com.wang.tradingplatform.services.ChatService;
 import com.wang.tradingplatform.services.userService;
+import com.wang.tradingplatform.utils.RandomCodeUtil;
+import com.wang.tradingplatform.utils.RedisUtil;
 import com.wang.tradingplatform.utils.SnowflakeIdUtil;
 import com.wang.tradingplatform.utils.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/websocket")
 public class ChatController {
-
     private final SimpMessagingTemplate messagingTemplate;
-
     private final ChatService chatService;
-
-
     private final userService userService;
+    private final RedisUtil redisUtil;
 
 
     /**
@@ -36,10 +37,11 @@ public class ChatController {
      * @param chatService
      * @param messagingTemplate
      */
-    public ChatController(ChatService chatService, SimpMessagingTemplate messagingTemplate, userService userService) {
+    public ChatController(ChatService chatService, SimpMessagingTemplate messagingTemplate, userService userService, RedisUtil redisUtil) {
         this.chatService = chatService;
         this.messagingTemplate = messagingTemplate;
         this.userService = userService;
+        this.redisUtil = redisUtil;
     }
 
 
@@ -131,15 +133,52 @@ public class ChatController {
     //交易状态 0 未确认 1 已有请求 2已同意请求 3已拒绝 4交易已完成
     @Operation(summary = "拒绝或者接受交易请求")
     @PostMapping("/tradeRequest/request")
+    @Transactional(rollbackFor = Exception.class)
     public void HandleTradeRequest(@RequestBody TradeRequest tradeRequest) {
         //先看该用户是否有权利
         Integer row = userService.getPermission(UserContext.getCurrentUserId(), tradeRequest.getGoodsId());
         if (row > 0) {
             //将trade_transaction表进行数据同步
             userService.HandleTradeRequest(tradeRequest.getSelect(), tradeRequest.getGoodsId(), tradeRequest.getSessionId());
-            //将goods表进行同步
-            userService.saleGoods(tradeRequest.getGoodsId(), tradeRequest.getToUid(), UserContext.getCurrentUserId());
+            if (tradeRequest.getTradeState() == 2) {
+                //将goods表进行同步
+                userService.saleGoods(tradeRequest.getGoodsId(), tradeRequest.getToUid(), UserContext.getCurrentUserId());
+            }
         }
     }
+
+    @Operation(summary = "得到自己的验证码")
+    @PostMapping("/tradeRequest/myVerifyCode")
+    public String getMyVerifyCode(@RequestBody TradePairUp tradePairUp) {
+        //计算出合理的key
+        Long myId = UserContext.getCurrentUserId();
+        Long otherId = userService.getOppositeId(myId, tradePairUp.getGoodsId());
+        String key = "MyVerifyCode" + myId + otherId;
+        String randomCode = (String) redisUtil.get(key);
+        if (randomCode == null) {
+            //说明在redis内没有存储该用户的验证码
+            randomCode = RandomCodeUtil.generate();
+            redisUtil.set(key, randomCode, 5, TimeUnit.MINUTES);
+        }
+        return randomCode;
+    }
+
+    //填写别人的验证码  自己是第一个则返回1 自己是第二个则返回2 其他都为错误
+    @Operation(summary = "填写别人的验证码")
+    @PostMapping("/tradeRequest/otherVerifyCode")
+    public Integer putOtherVerifyCode(@RequestBody TradePairUp tradePairUp) {
+        log.info("========== 填写验证码 ==========");
+        return userService.putOtherVerifyCode(tradePairUp);
+    }
+
+    //拒绝交易 todo
+    @Operation(summary = "拒绝交易")
+    @PostMapping("/tradeRequest/Reject")
+    public Result<Object> RejectTradeRequest() {
+        return null;
+    }
+
+    //交易结束，进行评价 TODO
+
 
 }

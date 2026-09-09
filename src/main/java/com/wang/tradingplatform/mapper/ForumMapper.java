@@ -3,6 +3,7 @@ package com.wang.tradingplatform.mapper;
 import com.wang.tradingplatform.pojo.entity.*;
 import com.wang.tradingplatform.pojo.vo.CommentCircleVO;
 import com.wang.tradingplatform.pojo.vo.CommentVO;
+import com.wang.tradingplatform.pojo.vo.PageResult;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -86,4 +87,7 @@ public interface ForumMapper {
 
     //热门活动详细信息
     Circle detailedActivityUpdates(Integer id);
+
+    //查看我参加的圈子
+    List<Circle> myParticipateCircle(Long currentUserId);
 }

@@ -2,15 +2,19 @@ package com.wang.tradingplatform.controller;
 
 import com.wang.tradingplatform.pojo.dto.UploadItemDTO;
 import com.wang.tradingplatform.pojo.entity.CommentGoods;
+import com.wang.tradingplatform.pojo.entity.Goods;
 import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
 import com.wang.tradingplatform.pojo.entity.ProductAssociationVO;
 import com.wang.tradingplatform.pojo.vo.*;
 import com.wang.tradingplatform.services.impl.itemsServicesImpl;
+import com.wang.tradingplatform.utils.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Tag(name = "商品上架模块")
 @Slf4j
@@ -101,9 +105,9 @@ public class ItemsController {
     @Operation(summary = "查看用户的评价以及别人对用户的评价")
     @GetMapping("/select/comment")
     public void selectComment(@RequestBody ItemQueryParam itemQueryParam) {
-        if (itemQueryParam.getTrait()==3){
+        if (itemQueryParam.getTrait() == 3) {
             //说明是在查询来自卖家对该用户的评价
-        }else{
+        } else {
             //说明是该用户对交易的评价
         }
     }
@@ -111,8 +115,22 @@ public class ItemsController {
     //根据传递的商品id查询商品的简略信息，以实现会话列表的商品信息查询
     @Operation(summary = "根据传递的商品id查询商品的简略信息，以实现会话列表的商品信息查询")
     @GetMapping("/select/briefInfo/{goodsId}")
-    public ProductAssociationVO selectBriefInfo(@PathVariable Long goodsId){
+    public ProductAssociationVO selectBriefInfo(@PathVariable Long goodsId) {
         return itemServices.selectBriefInfo(goodsId);
     }
 
+
+    //我已经卖出的商品
+    @Operation(summary = "我已经卖出的商品")
+    @GetMapping("/select/mySold")
+    public PageResult<GoodsVO> selectMySold(ItemQueryParam itemQueryParam) {
+        return itemServices.selectMySold(itemQueryParam);
+    }
+
+    //我已经购买的商品
+    @Operation(summary = "我已经购买的商品")
+    @GetMapping("/select/myPurchase")
+    public PageResult<GoodsVO> selectMyPurchase(ItemQueryParam itemQueryParam) {
+        return itemServices.selectMyPurchase(itemQueryParam);
+    }
 }

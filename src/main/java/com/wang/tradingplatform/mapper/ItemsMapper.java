@@ -55,4 +55,10 @@ public interface ItemsMapper {
 
     //根据传递的商品id查询商品的简略信息，以实现会话列表的商品信息查询b
     ProductAssociationVO selectBriefInfo(Long goodsId);
+
+    //我已经卖出的商品
+    List<GoodsVO> selectMySold(Long currentUserId);
+
+    //我已经购买的商品
+    List<GoodsVO> selectMyPurchase(Long currentUserId);
 }

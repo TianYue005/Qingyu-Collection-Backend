@@ -97,6 +97,7 @@ public interface userService {
     //的到与当前用户对话的用户的id
     String getOtherId(Long sessionId, Long currentUserId);
 
+
     /**
      * 会话商品联想
      * 前端传递session_id后端根据session_id查看与它相关的商品简略信息并返回
@@ -118,4 +119,10 @@ public interface userService {
 
     //当前用户的待处理交易
     List<Pending> userPending(Long userId);
+
+    //填写别人的验证码
+    Integer putOtherVerifyCode(TradePairUp tradePairUp);
+
+    //根据自己的id与商品id得到对面的id
+    Long getOppositeId(Long myId, Long goodsId);
 }
