@@ -16,4 +16,7 @@ public class TeamUp {
     private String startTime;//组团活动开始时间
     private String createAt;//创建时间
     private String updateAt;//最后更新时间
+    private Integer peopleNumber;//允许的最多参与人数
+    private Integer participateNumber;//已经参加的人数
+    private Integer joined;//是否已经参与
 }

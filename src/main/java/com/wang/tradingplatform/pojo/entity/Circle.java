@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -23,8 +25,15 @@ public class Circle {
     private Integer status;//0 未开始，1 已开始 2 已结束
     private Integer participant;
     private String category;
+    //点赞数（详情查询时返回）
+    private Integer likeCount;
+    //当前用户是否已点赞 1为已点赞 0为未点赞
+    private Integer isLike;
+    private LocalDateTime createTime;//创建时间
     //这里的category与type进行区分
     //category是区分Dynamics，Task，Event三个
     //type是区分圈子动态的求助等与跑图任务的代取快递等
     //这两个是不一样的
+    private Boolean total;//是否有人接单
+    private Integer likeNumber;//点赞数
 }

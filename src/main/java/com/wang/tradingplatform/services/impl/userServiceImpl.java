@@ -2,12 +2,14 @@ package com.wang.tradingplatform.services.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.wang.tradingplatform.exception.BusinessException;
 import com.wang.tradingplatform.mapper.ItemsMapper;
 import com.wang.tradingplatform.mapper.UserMapper;
 import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
 import com.wang.tradingplatform.pojo.entity.*;
 import com.wang.tradingplatform.pojo.vo.ChatMessageListVO;
+import com.wang.tradingplatform.pojo.vo.EvaluateVO;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
 import com.wang.tradingplatform.services.userService;
@@ -45,13 +47,11 @@ public class userServiceImpl implements userService {
      */
     @Override
     public String register(RegisterDTO registerDTO) {
+        ParamUtil.notNull(registerDTO, "注册信息");
         String username = registerDTO.getUsername(); // 用户名
         String account = registerDTO.getAccount(); // 手机号
         String password = registerDTO.getPassword(); // 密码
-        boolean b = userUtil.checkRegisterDTO(registerDTO);
-        if (!b) {
-            return "输入信息有误";
-        }
+        userUtil.checkRegisterDTO(registerDTO);// 不符合要求会抛出带原因的运行时异常
         // 构建用户对象
         User user = new User();
         user.setUserId(snowflakeIdUtil.nextId());
@@ -82,12 +82,10 @@ public class userServiceImpl implements userService {
      */
     @Override
     public String login(LoginDTO loginDTO) {
+        ParamUtil.notNull(loginDTO, "登录信息");
+        //检验loginDTO的数据，不符合要求会抛出带原因的运行时异常
+        userUtil.checkLoginDTO(loginDTO);
         Long uId = userMapper.findIDByAccount(loginDTO.getAccount());
-        //检验loginDTO的数据
-        boolean b = userUtil.checkLoginDTO(loginDTO);
-        if (!b) {
-            return "信息有误";
-        }
         //登录
         Integer login = userMapper.login(loginDTO.getAccount(), loginDTO.getPassword());
         if (login == null || login == 0) {
@@ -129,6 +127,7 @@ public class userServiceImpl implements userService {
      */
     @Override
     public User selectAccountAndName(Long userId) {
+        ParamUtil.positive(userId, "用户id");
         return userMapper.selectAccountAndName(userId);
     }
 
@@ -154,6 +153,8 @@ public class userServiceImpl implements userService {
      */
     @Override
     public PageResult<ChatMessage> selectHistory(ItemQueryParam itemQueryParam) {
+        ParamUtil.checkPage(itemQueryParam);
+        ParamUtil.positive(itemQueryParam.getSessionId(), "sessionId");
         //查找该用户的所有有关联的sessionId
         List<Long> sessionIdList = userMapper.selectUserSessionList(UserContext.getCurrentUserId());
         //判断传递的sessionId是否真的属于该用户
@@ -186,6 +187,7 @@ public class userServiceImpl implements userService {
      */
     @Override
     public int favourite(Long id) {
+        ParamUtil.positive(id, "商品id");
         return userMapper.addFavourite(UserContext.getCurrentUserId(), id);
     }
 
@@ -196,6 +198,7 @@ public class userServiceImpl implements userService {
      */
     @Override
     public PageResult<GoodsVO> selectFavourite(ItemQueryParam itemQueryParam) {
+        ParamUtil.checkPage(itemQueryParam);
         try (Page<Goods> page = PageHelper.startPage(itemQueryParam.getPageNumber(), itemQueryParam.getPageSize())) {
             List<GoodsVO> list = userMapper.selectFavourite(UserContext.getCurrentUserId());
             return new PageResult<>(page.getTotal(), list);
@@ -210,6 +213,7 @@ public class userServiceImpl implements userService {
      */
     @Override
     public User selectAccountInfo(String account) {
+        ParamUtil.notBlank(account, "账号");
         return userMapper.selectAccountInfo(UserContext.getCurrentUserId());
     }
 
@@ -221,12 +225,17 @@ public class userServiceImpl implements userService {
      */
     @Override
     public void updatePassword(String password) {
+        ParamUtil.notBlank(password, "密码");
+        if (password.length() < 6) {
+            throw new BusinessException("密码长度不能少于6位");
+        }
         userMapper.updateUserPassword(password, UserContext.getCurrentUserId());
     }
 
     //取消收藏功能
     @Override
     public Integer favouriteRM(Long id) {
+        ParamUtil.positive(id, "商品id");
         return userMapper.favouriteRM(id, UserContext.getCurrentUserId());
     }
 
@@ -243,8 +252,9 @@ public class userServiceImpl implements userService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createChatSession(Long toUserId, Long goodsId) {
+        ParamUtil.positive(toUserId, "目标用户id");
         if (Objects.equals(toUserId, UserContext.getCurrentUserId())) {
-            throw new RuntimeException("不允许与自己发起会话");
+            throw new BusinessException("不允许与自己发起会话");
         }
 
         SnowflakeIdUtil util = new SnowflakeIdUtil();
@@ -355,6 +365,9 @@ public class userServiceImpl implements userService {
     //填写别人的验证码  自己是第一个则返回1 自己是第二个则返回2 其他都为错误
     @Override
     public Integer putOtherVerifyCode(TradePairUp tradePairUp) {
+        ParamUtil.notNull(tradePairUp, "验证信息");
+        ParamUtil.positive(tradePairUp.getGoodsId(), "商品id");
+        ParamUtil.notBlank(tradePairUp.getOtherVerifyCode(), "验证码");
         //先看自己之前是不是有人填写过了，如果没有就填写。如果有就进行下一步
         //计算出合理的key
         Long myId = UserContext.getCurrentUserId();
@@ -390,5 +403,15 @@ public class userServiceImpl implements userService {
             return id;
         }
         return myId;
+    }
+
+    //查看评价：target=0 自己评价别人，其他为别人评价自己
+    @Override
+    public PageResult<EvaluateVO> selectEvaluate(ItemQueryParam itemQueryParam) {
+        ParamUtil.checkPage(itemQueryParam);
+        try (Page<EvaluateVO> page = PageHelper.startPage(itemQueryParam.getPageNumber(), itemQueryParam.getPageSize())) {
+            List<EvaluateVO> list = userMapper.selectEvaluate(itemQueryParam, UserContext.getCurrentUserId());
+            return new PageResult<>(page.getTotal(), list);
+        }
     }
 }

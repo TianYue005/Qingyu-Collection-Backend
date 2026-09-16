@@ -1,5 +1,6 @@
 package com.wang.tradingplatform.services;
 
+import com.wang.tradingplatform.pojo.dto.EvaluateDTO;
 import com.wang.tradingplatform.pojo.dto.UploadItemDTO;
 import com.wang.tradingplatform.pojo.entity.CommentGoods;
 import com.wang.tradingplatform.pojo.entity.Goods;
@@ -44,4 +45,7 @@ public interface itemsServices {
 
     //我已经购买的商品
     PageResult<GoodsVO> selectMyPurchase(ItemQueryParam itemQueryParam);
+
+    //评价交易对方
+    Boolean evaluate(EvaluateDTO dto);
 }

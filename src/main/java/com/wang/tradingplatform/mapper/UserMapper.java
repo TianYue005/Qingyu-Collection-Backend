@@ -2,6 +2,7 @@ package com.wang.tradingplatform.mapper;
 
 import com.wang.tradingplatform.pojo.entity.*;
 import com.wang.tradingplatform.pojo.vo.ChatMessageListVO;
+import com.wang.tradingplatform.pojo.vo.EvaluateVO;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -149,4 +150,7 @@ public interface UserMapper {
 
     //当前用户的待处理交易2
     List<Pending> userPending2(Long userId);
+
+    //查看评价：target=0 自己评价别人，其他为别人评价自己
+    List<EvaluateVO> selectEvaluate(@Param("param") ItemQueryParam itemQueryParam, @Param("userId") Long userId);
 }

@@ -289,5 +289,49 @@
         WHERE g.sold = #{userId}
         AND g.finished IS NULL
     </select>
+    <!--查看评价：target=0 自己评价别人，其他为别人评价自己；trait=1 好评(score>=4)，trait=2 差评(score<=3)-->
+    <select id="selectEvaluate" resultType="com.wang.tradingplatform.pojo.vo.EvaluateVO">
+        SELECT
+        e.id,
+        e.evaluator_id AS evaluatorId,
+        eu.user_name AS evaluatorName,
+        eu.avatar AS evaluatorAvatar,
+        e.evaluated_id AS evaluatedId,
+        du.user_name AS evaluatedName,
+        du.avatar AS evaluatedAvatar,
+        e.content,
+        e.score,
+        e.create_time AS createTime,
+        e.goods_id AS goodsId,
+        g.goods_desc AS goodsDesc,
+        gi.img_url AS goodsImgUrl
+        FROM evaluate e
+        LEFT JOIN `user` eu ON eu.user_id = e.evaluator_id
+        LEFT JOIN `user` du ON du.user_id = e.evaluated_id
+        LEFT JOIN goods g ON g.goods_id = e.goods_id
+        LEFT JOIN (
+        SELECT goods_id,
+        img_url,
+        ROW_NUMBER() OVER (PARTITION BY goods_id ORDER BY id ASC) AS rn
+        FROM goods_image
+        ) gi ON gi.goods_id = e.goods_id AND gi.rn = 1
+        <where>
+            <choose>
+                <when test="param.target != null and param.target != 0">
+                    AND e.evaluated_id = #{userId}
+                </when>
+                <otherwise>
+                    AND e.evaluator_id = #{userId}
+                </otherwise>
+            </choose>
+            <if test="param.trait != null and param.trait == 1">
+                AND e.score &gt;= 4
+            </if>
+            <if test="param.trait != null and param.trait == 2">
+                AND e.score &lt;= 3
+            </if>
+        </where>
+        ORDER BY e.create_time DESC
+    </select>
 
 </mapper>

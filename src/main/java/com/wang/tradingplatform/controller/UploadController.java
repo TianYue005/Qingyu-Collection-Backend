@@ -1,5 +1,6 @@
 package com.wang.tradingplatform.controller;
 
+import com.wang.tradingplatform.exception.BusinessException;
 import com.wang.tradingplatform.pojo.entity.Picture;
 import com.wang.tradingplatform.pojo.vo.Result;
 import com.wang.tradingplatform.utils.AliyunOSSOperator;
@@ -50,6 +51,12 @@ public class UploadController {
             // 1. 主线程读取文件内容和尺寸
             byte[] fileBytes = file.getBytes();
             String originalFilename = file.getOriginalFilename();
+            if (fileBytes == null || fileBytes.length == 0) {
+                throw new BusinessException("上传文件内容不能为空");
+            }
+            if (originalFilename == null || originalFilename.trim().isEmpty()) {
+                throw new BusinessException("上传文件的文件名不能为空");
+            }
 
             // 尝试解析图片
             BufferedImage image = ImageIO.read(new ByteArrayInputStream(fileBytes));

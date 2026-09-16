@@ -1,8 +1,8 @@
 package com.wang.tradingplatform.config;
 
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import tools.jackson.databind.JacksonModule;
+import tools.jackson.databind.module.SimpleModule;
+import tools.jackson.databind.ser.std.ToStringSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -18,7 +18,7 @@ public class JacksonConfig {
      * 注册 Jackson Module，全局将 Long 类型序列化为字符串
      */
     @Bean
-    public Module longToStringModule() {
+    public JacksonModule longToStringModule() {
         SimpleModule module = new SimpleModule();
         module.addSerializer(Long.class, ToStringSerializer.instance);
         module.addSerializer(long.class, ToStringSerializer.instance);

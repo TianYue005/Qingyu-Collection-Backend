@@ -34,4 +34,6 @@ public class ItemQueryParam {
     /*评论相关*/
     //评论特质 0全部（是指该用户对其他人的评论） 1好评 2差评 3来自卖家（只有来自卖家部分能看到卖家的评论）
     private Integer trait;
+    /*评价相关  0是自己丢别人 别的都是别人对自己*/
+    private Integer target;
 }

@@ -3,6 +3,7 @@ package com.wang.tradingplatform.controller;
 import com.wang.tradingplatform.pojo.entity.UserFeedback;
 import com.wang.tradingplatform.pojo.vo.Result;
 import com.wang.tradingplatform.services.UserFeedBackService;
+import com.wang.tradingplatform.utils.ParamUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class FeedBackController {
     @Operation(summary = "用户反馈")
     @PostMapping("/add")
     public Result<Object> feedBack(@RequestBody UserFeedback feedback) {
+        ParamUtil.notNull(feedback, "反馈信息");
         Boolean b = feedBackService.addFeedBack(feedback);
         if (b){
             return Result.success();

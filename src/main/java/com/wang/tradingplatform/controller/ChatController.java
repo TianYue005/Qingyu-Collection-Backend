@@ -6,6 +6,7 @@ import com.wang.tradingplatform.pojo.vo.PageResult;
 import com.wang.tradingplatform.pojo.vo.Result;
 import com.wang.tradingplatform.services.ChatService;
 import com.wang.tradingplatform.services.userService;
+import com.wang.tradingplatform.utils.ParamUtil;
 import com.wang.tradingplatform.utils.RandomCodeUtil;
 import com.wang.tradingplatform.utils.RedisUtil;
 import com.wang.tradingplatform.utils.SnowflakeIdUtil;
@@ -83,6 +84,7 @@ public class ChatController {
     @Operation(summary = "根据传递的sessionId获取历史消息")
     @PostMapping("/historyMessage")
     public Result<PageResult<ChatMessage>> history(@RequestBody ItemQueryParam itemQueryParam) {
+        ParamUtil.notNull(itemQueryParam, "查询参数");
         log.info("========== 获取历史消息 ==========");
         return Result.success(userService.selectHistory(itemQueryParam));
     }
@@ -97,6 +99,7 @@ public class ChatController {
     @Operation(summary = "发起会话")
     @PostMapping("/chat/{toUserId}/{goodsId}")
     public Long createChatSession(@PathVariable Long toUserId, @PathVariable Long goodsId) {
+        ParamUtil.positive(toUserId, "目标用户id");
         log.info("========== 发起会话 ==========");
         return userService.createChatSession(toUserId, goodsId);
     }
@@ -111,6 +114,7 @@ public class ChatController {
     @Operation(summary = "会话商品联想")
     @GetMapping("/tradeRequest/lenovo/{sessionId}")
     public ProductAssociationVO tradeRequestLenovo(@PathVariable Long sessionId) {
+        ParamUtil.positive(sessionId, "会话id");
         log.info("========== 会话商品联想 ==========");
         return userService.tradeRequestLenovo(sessionId);
     }
@@ -123,6 +127,8 @@ public class ChatController {
     @Operation(summary = "交易信息以及交易状态")
     @GetMapping("/tradeRequest/tradeState/{session_id}/{goods_id}")
     public ProductAssociationVO selectTradeState(@PathVariable Long goods_id, @PathVariable Long session_id) {
+        ParamUtil.positive(goods_id, "商品id");
+        ParamUtil.positive(session_id, "会话id");
         log.info("========== 交易信息以及交易状态 ==========");
         ProductAssociationVO vo = userService.selectTradeState(goods_id, session_id);
         System.out.println(vo);
@@ -135,6 +141,11 @@ public class ChatController {
     @PostMapping("/tradeRequest/request")
     @Transactional(rollbackFor = Exception.class)
     public void HandleTradeRequest(@RequestBody TradeRequest tradeRequest) {
+        ParamUtil.notNull(tradeRequest, "交易请求");
+        ParamUtil.positive(tradeRequest.getGoodsId(), "商品id");
+        ParamUtil.positive(tradeRequest.getSessionId(), "会话id");
+        ParamUtil.notNull(tradeRequest.getSelect(), "处理选项");
+        ParamUtil.notNull(tradeRequest.getTradeState(), "交易状态");
         //先看该用户是否有权利
         Integer row = userService.getPermission(UserContext.getCurrentUserId(), tradeRequest.getGoodsId());
         if (row > 0) {
@@ -150,6 +161,8 @@ public class ChatController {
     @Operation(summary = "得到自己的验证码")
     @PostMapping("/tradeRequest/myVerifyCode")
     public String getMyVerifyCode(@RequestBody TradePairUp tradePairUp) {
+        ParamUtil.notNull(tradePairUp, "验证信息");
+        ParamUtil.positive(tradePairUp.getGoodsId(), "商品id");
         //计算出合理的key
         Long myId = UserContext.getCurrentUserId();
         Long otherId = userService.getOppositeId(myId, tradePairUp.getGoodsId());
@@ -167,6 +180,7 @@ public class ChatController {
     @Operation(summary = "填写别人的验证码")
     @PostMapping("/tradeRequest/otherVerifyCode")
     public Integer putOtherVerifyCode(@RequestBody TradePairUp tradePairUp) {
+        ParamUtil.notNull(tradePairUp, "验证信息");
         log.info("========== 填写验证码 ==========");
         return userService.putOtherVerifyCode(tradePairUp);
     }

@@ -4,6 +4,11 @@ import com.wang.tradingplatform.pojo.entity.*;
 import com.wang.tradingplatform.pojo.vo.CommentCircleVO;
 import com.wang.tradingplatform.pojo.vo.CommentVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
+import com.wang.tradingplatform.pojo.vo.Result;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 public interface ForumService {
     //添加组团信息
@@ -43,7 +48,7 @@ public interface ForumService {
     PageResult<Circle> searchActivity(String keyword);
 
     //我的参与
-    PageResult<TeamUp> myJoin();
+    PageResult<TeamUp> myJoin(ItemQueryParam itemQueryParam);
 
     //我的创建
     PageResult<TeamUp> myCreate();
@@ -77,4 +82,22 @@ public interface ForumService {
 
     //查看我参加的圈子
     PageResult<Circle> myParticipateCircle();
+
+    //查看圈子的热榜
+    Set<Object> selectHortSortCircle();
+
+    //根据id列表查询对应的简略信息
+    List<Circle> selectSimpleInfoByList(List<Long> idList);
+
+    //圈子的点赞接口
+    void setCircleLike(Long circleId);
+
+    //参加组团
+    void join(Long teamUpId);
+
+    //接受跑腿任务
+    void acceptTask(Long circleId);
+
+    //我参与的跑腿任务
+    PageResult<Circle> myTakeTask(ItemQueryParam itemQueryParam);
 }

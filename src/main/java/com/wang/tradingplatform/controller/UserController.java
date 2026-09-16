@@ -6,10 +6,12 @@ import com.wang.tradingplatform.pojo.dto.RegisterDTO;
 import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
 import com.wang.tradingplatform.pojo.entity.Pending;
 import com.wang.tradingplatform.pojo.entity.User;
+import com.wang.tradingplatform.pojo.vo.EvaluateVO;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
 import com.wang.tradingplatform.pojo.vo.Result;
 import com.wang.tradingplatform.services.userService;
+import com.wang.tradingplatform.utils.ParamUtil;
 import com.wang.tradingplatform.utils.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -39,6 +41,7 @@ public class UserController {
     @Operation(summary = "用户注册")
     @PostMapping("/register")
     public Result<String> register(@RequestBody RegisterDTO registerDTO) {
+        ParamUtil.notNull(registerDTO, "注册信息");
         String msg = userService.register(registerDTO);
         if ("注册成功".equals(msg)) {
             return Result.success();
@@ -58,17 +61,13 @@ public class UserController {
         log.info("========== 收到登录请求 ==========");
         log.info("登录用户名: {}", loginDTO.getAccount());
 
-        try {
-            //message存储的是 token
-            String message = userService.login(loginDTO);
-            if (message.equals("信息有误") || message.equals("登陆失败，请检查账号或者密码")) {
-                return Result.error(message);
-            }
-            return Result.success(message);
-        } catch (Exception e) {
-            log.error("用户登录失败: {}", e.getMessage(), e);
-            return Result.error(e.getMessage());
+        ParamUtil.notNull(loginDTO, "登录信息");
+        //message存储的是 token
+        String message = userService.login(loginDTO);
+        if (message.equals("信息有误") || message.equals("登陆失败，请检查账号或者密码")) {
+            return Result.error(message);
         }
+        return Result.success(message);
     }
 
     /**
@@ -80,6 +79,7 @@ public class UserController {
     @Operation(summary = "得到用户的用户名与账号")
     @PostMapping("/info/{id}")
     public Result<User> info(@PathVariable Long id) {
+        ParamUtil.positive(id, "用户id");
         log.info("========== 获取用户信息 ==========");
         return Result.success(userService.selectAccountAndName(id));
     }
@@ -88,6 +88,7 @@ public class UserController {
     @Operation(summary = "收藏功能")
     @PostMapping("/favourite/{id}")
     public Result<Integer> favourite(@PathVariable Long id) {
+        ParamUtil.positive(id, "商品id");
         log.info("========== 收藏功能 ==========");
         return Result.success(userService.favourite(id));
     }
@@ -96,6 +97,7 @@ public class UserController {
     @Operation(summary = "取消收藏功能")
     @DeleteMapping("/favouriteRM/{id}")
     public Result<Integer> favouriteRM(@PathVariable Long id) {
+        ParamUtil.positive(id, "商品id");
         log.info("========== 取消收藏功能 ==========");
         return Result.success(userService.favouriteRM(id));
     }
@@ -112,6 +114,7 @@ public class UserController {
     @Operation(summary = "得到账号基本信息")
     @GetMapping("/accountInfo")
     public Result<User> accountInfo(@RequestParam String account) {
+        ParamUtil.notBlank(account, "账号");
         log.info("========== 获取账号基本信息 ==========");
         return Result.success(userService.selectAccountInfo(account));
     }
@@ -120,6 +123,7 @@ public class UserController {
     @Operation(summary = "修改密码")
     @PostMapping("/updatePassword")
     public Result<Object> updatePassword(@RequestParam String password) {
+        ParamUtil.notBlank(password, "密码");
         log.info("========== 修改密码 ==========");
         userService.updatePassword(password);
         return Result.success();
@@ -140,5 +144,11 @@ public class UserController {
         return userService.userPending(UserContext.getCurrentUserId());
     }
 
-    //评论卖家
+    //查看评论  自己对别人的/别人对自己的
+    @Operation(summary = "查看评论  自己对别人的/别人对自己的 ")
+    @GetMapping("/review")
+    public Result<PageResult<EvaluateVO>> selectMyReview(ItemQueryParam itemQueryParam) {
+        log.info("========== 查看评论 自己对别人的/别人对自己的 ==========");
+        return Result.success(userService.selectEvaluate(itemQueryParam));
+    }
 }

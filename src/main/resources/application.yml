@@ -20,6 +20,22 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/tradingplatform?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+  ai:
+    model:
+      # 对话模型指定为 DeepSeek，避免与 OpenAI 的 ChatModel Bean 冲突
+      chat: deepseek
+    deepseek:
+      # DeepSeek 官方对话模型（密钥请在环境变量中配置）
+      api-key: ${DEEPSEEK_API_KEY:}
+      base-url: https://api.deepseek.com
+      chat:
+        model: deepseek-chat
+    openai:
+      # 阿里云百炼 Embedding（走 OpenAI 兼容协议）
+      api-key: ${DASHSCOPE_API_KEY:}
+      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      embedding:
+        model: text-embedding-v3
 mybatis:
   type-handlers-package: com.wang.tradingplatform.utils
   configuration:

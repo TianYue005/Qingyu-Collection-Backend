@@ -314,7 +314,8 @@
     </select>
     <!--我已经卖出的商品-->
     <select id="selectMySold" resultType="com.wang.tradingplatform.pojo.vo.GoodsVO">
-        SELECT g.goods_id, g.goods_desc, gi.img_url, gi.img_width, gi.img_height
+        SELECT g.goods_id, g.goods_desc, gi.img_url, gi.img_width, gi.img_height,
+        IF( EXISTS(SELECT 1 FROM evaluate ev WHERE ev.goods_id = g.goods_id AND ev.evaluator_id = #{currentUserId}), 1, 0 ) AS has_evaluate
         FROM goods g
         LEFT JOIN (SELECT goods_id,
         img_url,
@@ -332,7 +333,7 @@
         gi.img_url,
         gi.img_width,
         gi.img_height,
-        IF( EXISTS(SELECT 1 FROM evaluate ev WHERE ev.goods_id = g.goods_id), 1, 0 ) AS has_evaluate
+        IF( EXISTS(SELECT 1 FROM evaluate ev WHERE ev.goods_id = g.goods_id AND ev.evaluator_id = #{currentUserId}), 1, 0 ) AS has_evaluate
         FROM goods g
         LEFT JOIN (
         SELECT
@@ -345,5 +346,11 @@
         ) gi ON g.goods_id = gi.goods_id AND gi.rn = 1
         WHERE g.sold = #{currentUserId} AND g.finished IS NOT NULL
     </select>
+
+    <!--评价交易对方-->
+    <insert id="insertEvaluate" parameterType="com.wang.tradingplatform.pojo.entity.Evaluate">
+        INSERT INTO evaluate (evaluator_id, evaluated_id, content, score, create_time, goods_id)
+        VALUES (#{evaluatorId}, #{evaluatedId}, #{content}, #{score}, #{createTime}, #{goodsId})
+    </insert>
 
 </mapper>

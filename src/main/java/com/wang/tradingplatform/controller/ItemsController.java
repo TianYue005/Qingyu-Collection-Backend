@@ -1,20 +1,19 @@
 package com.wang.tradingplatform.controller;
 
+import com.wang.tradingplatform.pojo.dto.EvaluateDTO;
 import com.wang.tradingplatform.pojo.dto.UploadItemDTO;
 import com.wang.tradingplatform.pojo.entity.CommentGoods;
-import com.wang.tradingplatform.pojo.entity.Goods;
 import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
 import com.wang.tradingplatform.pojo.entity.ProductAssociationVO;
 import com.wang.tradingplatform.pojo.vo.*;
 import com.wang.tradingplatform.services.impl.itemsServicesImpl;
-import com.wang.tradingplatform.utils.UserContext;
+import com.wang.tradingplatform.utils.ParamUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @Tag(name = "商品上架模块")
 @Slf4j
@@ -29,6 +28,7 @@ public class ItemsController {
     @Operation(summary = "商品上架")
     @PostMapping("/add")
     public Result<String> add(@RequestBody UploadItemDTO uploadItemDTO) {
+        ParamUtil.notNull(uploadItemDTO, "商品信息");
         log.info("========== 添加商品 ==========");
         Boolean b = itemServices.add(uploadItemDTO);
         if (b) {
@@ -41,6 +41,7 @@ public class ItemsController {
     @Operation(summary = "根据ID查找商品")
     @GetMapping("/{id}")
     public Result<GoodsVO> findById(@PathVariable Long id) {
+        ParamUtil.positive(id, "商品id");
         log.info("========== 查找商品, id: {} ==========", id);
         GoodsVO item = itemServices.findGoodsById(id);
         if (item == null) {
@@ -62,6 +63,7 @@ public class ItemsController {
     @Operation(summary = "关键词查询")
     @GetMapping("/search")
     public Result<PageResult<GoodsVO>> selectByKeyword(@RequestParam String keyword) {
+        ParamUtil.notBlank(keyword, "搜索关键词");
         log.info("========== 关键词查询 ==========");
         PageResult<GoodsVO> goods = itemServices.selectByKeyword(keyword);
         return Result.success(goods);
@@ -81,6 +83,7 @@ public class ItemsController {
     @Operation(summary = "商品评论")
     @PostMapping("/add/comment/item")
     public Result<CommentGoods> addItemComment(@RequestBody CommentGoods comment) {
+        ParamUtil.notNull(comment, "评论信息");
         itemServices.addItemComment(comment);
         return Result.success();
     }
@@ -89,6 +92,7 @@ public class ItemsController {
     @Operation(summary = "查看商品评论")
     @GetMapping("/select/comment/item")
     public Result<PageResult<CommentGoodsVO>> selectItemComment(@RequestParam Long goodsId) {
+        ParamUtil.positive(goodsId, "商品id");
         PageResult<CommentGoodsVO> page = itemServices.selectItemComment(goodsId);
         return Result.success(page);
     }
@@ -97,6 +101,7 @@ public class ItemsController {
     @Operation(summary = "查看该评论之前的所有互动")
     @GetMapping("/select/comment/item/{id}")
     public Result<PageResult<CommentGoodsVO>> selectItemCommentInteraction(@PathVariable Long id) {
+        ParamUtil.positive(id, "评论id");
         PageResult<CommentGoodsVO> page = itemServices.selectItemCommentInteraction(id);
         return Result.success(page);
     }
@@ -116,6 +121,7 @@ public class ItemsController {
     @Operation(summary = "根据传递的商品id查询商品的简略信息，以实现会话列表的商品信息查询")
     @GetMapping("/select/briefInfo/{goodsId}")
     public ProductAssociationVO selectBriefInfo(@PathVariable Long goodsId) {
+        ParamUtil.positive(goodsId, "商品id");
         return itemServices.selectBriefInfo(goodsId);
     }
 
@@ -132,5 +138,22 @@ public class ItemsController {
     @GetMapping("/select/myPurchase")
     public PageResult<GoodsVO> selectMyPurchase(ItemQueryParam itemQueryParam) {
         return itemServices.selectMyPurchase(itemQueryParam);
+    }
+
+    //评价交易对方（买家评价卖家 / 卖家评价买家 通用）
+    @Operation(summary = "评价交易对方")
+    @PostMapping("/evaluate")
+    public Result<String> evaluate(@RequestBody EvaluateDTO evaluateDTO) {
+        ParamUtil.notNull(evaluateDTO, "评价信息");
+        log.info("========== 评价交易对方, goodsId: {} ==========", evaluateDTO.getGoodsId());
+        itemServices.evaluate(evaluateDTO);
+        return Result.success();
+    }
+
+    //卖家评价买家（与买家评价卖家对应，后端根据当前用户身份自动判断被评价方）
+    @Operation(summary = "卖家评价买家")
+    @PostMapping("/evaluate/buyer")
+    public Result<String> evaluateBuyer(@RequestBody EvaluateDTO evaluateDTO) {
+        return evaluate(evaluateDTO);
     }
 }

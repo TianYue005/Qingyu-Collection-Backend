@@ -6,8 +6,8 @@
     <!--添加组团信息-->
     <insert id="add" parameterType="com.wang.tradingplatform.pojo.entity.TeamUp" useGeneratedKeys="true"
             keyProperty="id">
-        INSERT INTO teamup (id, type, title, leader, start_time, create_at, update_at,leader_name)
-        VALUES (#{id}, #{type}, #{title}, #{leader},#{startTime}, #{createAt}, #{updateAt},#{leaderName})
+        INSERT INTO teamup (id, type, title, leader, start_time, create_at, update_at,leader_name,people_number)
+        VALUES (#{id},#{type},#{title},#{leader},#{startTime},#{createAt},#{updateAt},#{leaderName},#{peopleNumber})
     </insert>
     <!--添加圈子动态信息-->
     <insert id="addDynamic">
@@ -32,6 +32,18 @@
     <insert id="addCommentCircle">
         INSERT INTO comment_circle(circle_id, parent_id, text, picture, son, create_time, user_id, reply_user_id)
         VALUES (#{circleId}, #{parentId}, #{text}, #{picture}, #{son}, #{createTime}, #{userId}, #{replyUserId})
+    </insert>
+    <!--圈子的点赞接口-->
+    <insert id="setCircleLike">
+        INSERT IGNORE INTO circle_like (user_id, circle_id) VALUES (#{currentUserId},#{circleId})
+    </insert>
+    <!--参加组团-->
+    <insert id="join">
+        INSERT INTO team_up_participate(teamUpId, userId) VALUES (#{teamUpId},#{currentUserId})
+    </insert>
+    <!--接受跑腿任务-->
+    <insert id="acceptTask">
+        INSERT INTO accept_task (userId, circleId)VALUES (#{currentUserId},#{circleId})
     </insert>
     <!--分页查询组团信息-->
     <select id="TeamUpPage" resultType="com.wang.tradingplatform.pojo.entity.TeamUp">
@@ -58,9 +70,11 @@
     </select>
     <!--分页查询 发布任务-->
     <select id="TaskPage" resultType="com.wang.tradingplatform.pojo.entity.Circle">
-        SELECT id,type,bounty,request_content,note,user_id,create_time FROM circle
+        SELECT id, type, bounty, request_content, note, user_id, create_time
+        FROM circle
         <!--查询 圈子 选项某一选项-->
-        where category = 'Task'
+        WHERE category = 'Task'
+        AND (status != 2 OR status IS NULL)
         <if test="sortRules != null and sortRules !=''">
             order by ${sortRules}
         </if>
@@ -131,17 +145,20 @@
     <!--我的参与 组团-->
     <!--JoinTeamUp表用来存储某个用户参与了那个组团-->
     <select id="myJoin" resultType="com.wang.tradingplatform.pojo.entity.TeamUp">
-        SELECT DISTINCT teamup.id,
-        teamup.type,
-        teamup.title,
-        teamup.leader,
-        teamup.start_time,
-        teamup.create_at,
-        teamup.update_at,
-        teamup.leader_name
-        FROM teamup
-        INNER JOIN join_team_up jtu ON teamup.id = jtu.team_up_id
-        WHERE jtu.user_id = #{userId}
+        SELECT
+        t.id,
+        t.type,
+        t.title,
+        t.leader,
+        t.start_time,
+        t.create_at,
+        t.update_at,
+        t.leader_name,
+        t.people_number
+        FROM teamup t
+        JOIN team_up_participate tp
+        ON t.id = tp.teamUpId
+        WHERE tp.userId = #{userId}
     </select>
     <!--我的创建 组团-->
     <select id="myCreate" resultType="com.wang.tradingplatform.pojo.entity.TeamUp">
@@ -158,15 +175,22 @@
     </select>
     <!--根据组团id查询对应的详细信息-->
     <select id="detailedTeamUp" resultType="com.wang.tradingplatform.pojo.entity.TeamUp">
-        SELECT teamup.id,
-        teamup.type,
-        teamup.title,
-        teamup.leader,
-        teamup.start_time,
-        teamup.create_at,
-        teamup.update_at,
-        teamup.leader_name
-        FROM teamup WHERE id=#{id}
+        SELECT t.id,
+        t.type,
+        t.title,
+        t.leader,
+        t.start_time,
+        t.create_at,
+        t.leader_name,
+        t.people_number,
+        (SELECT COUNT(*)
+        FROM team_up_participate tp
+        WHERE tp.teamUpId = t.id) AS participateNumber,
+        (SELECT COUNT(*)
+        FROM team_up_participate
+        WHERE userId =#{userId} AND teamUpId=#{id}) as joined
+        FROM teamup t
+        WHERE t.id = #{id}
     </select>
     <!--根据组团id查询对应的评论信息-->
     <select id="selectComment" resultType="com.wang.tradingplatform.pojo.vo.CommentVO">
@@ -346,17 +370,37 @@
     <select id="detailedDynamicUpdates" resultType="com.wang.tradingplatform.pojo.entity.Circle">
         SELECT id,
         type,
-        content
+        content,
+        create_time,
+        (SELECT COUNT(*) FROM circle_like cl WHERE cl.circle_id = circle.id) AS like_count,
+        IF(EXISTS(SELECT 1 FROM circle_like cl WHERE cl.circle_id = circle.id AND cl.user_id = #{currentUserId}), 1, 0)
+        AS is_like
         FROM circle
         WHERE id=#{id}
     </select>
     <!--跑腿任务详细信息-->
     <select id="detailedTaskUpdates" resultType="com.wang.tradingplatform.pojo.entity.Circle">
-        SELECT id, type,bounty,request_content,note FROM circle WHERE id=#{id}
+        SELECT id,
+        user_id,
+        type,
+        bounty,
+        request_content,
+        note,
+        create_time,
+        category,
+        (SELECT COUNT(*) FROM accept_task WHERE circleId = #{id}) as total,
+        (SELECT COUNT(*) FROM circle_like WHERE user_id = #{currentUserId} AND circle_id = #{id}) AS is_like,
+        (SELECT COUNT(*) FROM circle_like WHERE circle_id = #{id}) AS like_number
+        FROM circle
+        WHERE id = #{id}
     </select>
     <!--热门活动详细信息-->
     <select id="detailedActivityUpdates" resultType="com.wang.tradingplatform.pojo.entity.Circle">
-        SELECT id, title,picture,start_time,end_time FROM circle WHERE id=#{id}
+        SELECT id, title,picture,start_time,end_time,
+        (SELECT COUNT(*) FROM circle_like cl WHERE cl.circle_id = circle.id) AS like_count,
+        IF(EXISTS(SELECT 1 FROM circle_like cl WHERE cl.circle_id = circle.id AND cl.user_id = #{currentUserId}), 1, 0)
+        AS is_like
+        FROM circle WHERE id=#{id}
     </select>
     <!--查看我参加的圈子-->
     <select id="myParticipateCircle" resultType="com.wang.tradingplatform.pojo.entity.Circle">
@@ -374,9 +418,28 @@
         create_time,
         update_time,
         status,
-        category,
-        total
+        category
         FROM circle
         WHERE id IN (SELECT circle_id FROM join_circle WHERE user_id = #{currentUserId})
+    </select>
+    <!--根据id列表查询对应的简略信息-->
+    <select id="selectSimpleInfoByList" resultType="com.wang.tradingplatform.pojo.entity.Circle">
+        SELECT id,title,category FROM circle WHERE id in
+        <foreach collection="idList" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+    <!--看还有没有剩下的人数-->
+    <select id="selectLeft" resultType="com.wang.tradingplatform.pojo.entity.TeamUp">
+        SELECT people_number,(SELECT count(*) FROM team_up_participate WHERE teamUpId=#{teamUpId}) as participate_number
+        FROM teamup WHERE id=#{teamUpId}
+    </select>
+    <!--我参与的跑腿任务-->
+    <select id="myTakeTask" resultType="com.wang.tradingplatform.pojo.entity.Circle">
+        SELECT c.id, c.type, c.bounty, c.request_content, c.note, c.user_id, c.create_time
+        FROM circle c
+        INNER JOIN accept_task at ON c.id = at.circleId
+        WHERE at.userId = #{currentUserId}
+        ORDER BY c.create_time DESC
     </select>
 </mapper>

@@ -1,12 +1,14 @@
 package com.wang.tradingplatform.services.impl;
 
 import com.wang.tradingplatform.config.RabbitMQConfig;
+import com.wang.tradingplatform.exception.BusinessException;
 import com.wang.tradingplatform.mapper.ChatMessageMapper;
 import com.wang.tradingplatform.mapper.UserMapper;
 import com.wang.tradingplatform.pojo.entity.ChatMessage;
 import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
 import com.wang.tradingplatform.pojo.entity.ProductAssociationVO;
 import com.wang.tradingplatform.services.ChatService;
+import com.wang.tradingplatform.utils.ParamUtil;
 import com.wang.tradingplatform.utils.RedisUtil;
 import com.wang.tradingplatform.utils.SnowflakeIdUtil;
 import lombok.RequiredArgsConstructor;
@@ -39,11 +41,18 @@ public class ChatServiceImpl implements ChatService {
     //保存聊天信息到Redis与MySQL  todo --------------------------
     @Override
     public void saveMessage(ChatMessage message) {
+        ParamUtil.notNull(message, "消息内容");
+        if (message.getSessionId() == null) {
+            throw new BusinessException("没有传递sessionId");
+        }
+        if (message.getFromUid() == null || message.getToUid() == null) {
+            throw new BusinessException("发送方或接收方id不能为空");
+        }
+        if (message.getMsgType() == null) {
+            throw new BusinessException("消息类型不能为空");
+        }
         // 1. 生成唯一ID并补齐时间字段  目前两个id（主键id与会话id）是相同的
         long msgId = snowflakeIdUtil.nextId();
-        if (message.getSessionId() == null) {
-            throw new RuntimeException("没有传递sessionId");
-        }
         message.setId(msgId);
         message.setSendTime(LocalDateTime.now());//发送时间
         message.setIsRead(0);//是否已读
@@ -86,6 +95,8 @@ public class ChatServiceImpl implements ChatService {
      */
     @Override
     public List<ChatMessage> getPrivateHistoryRedis(ItemQueryParam itemQueryParam) {
+        ParamUtil.notNull(itemQueryParam, "查询参数");
+        ParamUtil.positive(itemQueryParam.getSessionId(), "sessionId");
         //先生成key
         String key = buildPrivateRedisKey(itemQueryParam.getSessionId());
         int pageSize = itemQueryParam.getPageSize();

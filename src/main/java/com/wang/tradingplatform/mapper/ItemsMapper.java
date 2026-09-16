@@ -61,4 +61,7 @@ public interface ItemsMapper {
 
     //我已经购买的商品
     List<GoodsVO> selectMyPurchase(Long currentUserId);
+
+    //评价交易对方
+    int insertEvaluate(Evaluate evaluate);
 }

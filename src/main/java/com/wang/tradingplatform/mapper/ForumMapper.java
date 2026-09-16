@@ -5,6 +5,7 @@ import com.wang.tradingplatform.pojo.vo.CommentCircleVO;
 import com.wang.tradingplatform.pojo.vo.CommentVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -31,7 +32,7 @@ public interface ForumMapper {
     //分页查询 发布任务
     List<Circle> TaskPage(ItemQueryParam itemQueryParam);
 
-    //分页查询 创建活动
+    //分页查询 热门活动
     List<Circle> ActivityPage(ItemQueryParam itemQueryParam);
 
     //组团模糊搜索
@@ -53,7 +54,7 @@ public interface ForumMapper {
     List<TeamUp> myCreate(Long currentUserId);
 
     //根据组团id查询对应的详细信息
-    TeamUp detailedTeamUp(Long id);
+    TeamUp detailedTeamUp(Long id,Long userId);
 
     //组团评论
     void addComment(Comment comment);
@@ -80,14 +81,32 @@ public interface ForumMapper {
     List<CommentCircleVO> selectCircleCommentInteraction(Integer commentId);
 
     //圈子动态详细信息
-    Circle detailedDynamicUpdates(Integer id);
+    Circle detailedDynamicUpdates(@Param("id") Integer id, @Param("currentUserId") Long currentUserId);
 
     //跑腿任务详细信息
-    Circle detailedTaskUpdates(Integer id);
+    Circle detailedTaskUpdates(@Param("id") Integer id, @Param("currentUserId") Long currentUserId);
 
     //热门活动详细信息
-    Circle detailedActivityUpdates(Integer id);
+    Circle detailedActivityUpdates(@Param("id") Integer id, @Param("currentUserId") Long currentUserId);
 
     //查看我参加的圈子
     List<Circle> myParticipateCircle(Long currentUserId);
+
+    //组团的点赞接口
+    Integer setCircleLike(Long circleId, Long currentUserId);
+
+    //根据id列表查询对应的简略信息
+    List<Circle> selectSimpleInfoByList(List<Long> idList);
+
+    //参加组团
+    void join(Long teamUpId, Long currentUserId);
+
+    //看还有没有剩下的人数
+    TeamUp selectLeft(Long teamUpId);
+
+    //接受跑腿任务
+    void acceptTask(Long circleId, Long currentUserId);
+
+    //我参与的跑腿任务
+    List<Circle> myTakeTask(Long currentUserId);
 }

@@ -3,6 +3,7 @@ package com.wang.tradingplatform.utils;
 import jakarta.annotation.Resource;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -12,10 +13,15 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class RedisUtil {
 
+    //期望的like:teamUp score=xxx
+    //点赞增加50 评论增加100 每小时减10
+    public final String REDIS_HOT_SORT_KEY = "like:teamUp";
+
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
 
     // ===================== String 字符串操作 =====================
+
     /**
      * 设置值，永不过期
      */
@@ -25,6 +31,7 @@ public class RedisUtil {
 
     /**
      * 根据key删除对应的内容
+     *
      * @param key
      */
     public void delete(String key) {
@@ -74,10 +81,12 @@ public class RedisUtil {
     public void lPush(String key, Object value) {
         redisTemplate.opsForList().leftPush(key, value);
     }
+
     // 右插
     public void rPush(String key, Object value) {
         redisTemplate.opsForList().rightPush(key, value);
     }
+
     // 范围查询
     public List<Object> lRange(String key, long start, long end) {
         return redisTemplate.opsForList().range(key, start, end);
@@ -87,6 +96,7 @@ public class RedisUtil {
     public void sAdd(String key, Object... values) {
         redisTemplate.opsForSet().add(key, values);
     }
+
     public Set<Object> sMembers(String key) {
         return redisTemplate.opsForSet().members(key);
     }
@@ -96,9 +106,15 @@ public class RedisUtil {
     public void zAdd(String key, Object value, double score) {
         redisTemplate.opsForZSet().add(key, value, score);
     }
+
     // 范围查询
     public Set<Object> zRange(String key, long start, long end) {
         return redisTemplate.opsForZSet().range(key, start, end);
+    }
+
+    // 范围查询（降序，用于热榜）
+    public Set<Object> zReverseRange(String key, long start, long end) {
+        return redisTemplate.opsForZSet().reverseRange(key, start, end);
     }
 
     // ===================== 通用key操作 =====================
@@ -106,14 +122,17 @@ public class RedisUtil {
     public Boolean expire(String key, long time, TimeUnit unit) {
         return redisTemplate.expire(key, time, unit);
     }
+
     // 删除key
     public Boolean del(String key) {
         return redisTemplate.delete(key);
     }
+
     // 批量删除
     public Long delBatch(Collection<String> keys) {
         return redisTemplate.delete(keys);
     }
+
     // 判断key是否存在
     public Boolean hasKey(String key) {
         return redisTemplate.hasKey(key);

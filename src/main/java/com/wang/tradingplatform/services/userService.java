@@ -4,6 +4,7 @@ import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
 import com.wang.tradingplatform.pojo.entity.*;
 import com.wang.tradingplatform.pojo.vo.ChatMessageListVO;
+import com.wang.tradingplatform.pojo.vo.EvaluateVO;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
 import org.apache.ibatis.annotations.Param;
@@ -125,4 +126,7 @@ public interface userService {
 
     //根据自己的id与商品id得到对面的id
     Long getOppositeId(Long myId, Long goodsId);
+
+    //查看评价：target=0 自己评价别人，其他为别人评价自己
+    PageResult<EvaluateVO> selectEvaluate(ItemQueryParam itemQueryParam);
 }

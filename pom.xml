@@ -8,13 +8,14 @@
     <modelVersion>4.0.0</modelVersion>
 
 
-    <!-- Spring Boot 3 -->
+    <!-- Spring Boot 4 -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.3</version>
+        <version>4.0.7</version>
         <relativePath/>
     </parent>
+
 
 
     <groupId>com.wang</groupId>
@@ -26,7 +27,7 @@
 
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>25</java.version>
     </properties>
 
 
@@ -36,14 +37,14 @@
         <!-- Web MVC -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
 
 
-        <!-- AOP -->
+        <!-- AOP(AspectJ) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-aop</artifactId>
+            <artifactId>spring-boot-starter-aspectj</artifactId>
         </dependency>
 
 
@@ -55,11 +56,16 @@
         </dependency>
 
 
-        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <version>1.18.34</version> <!-- 或更高版本 -->
+            <scope>provided</scope>
+        </dependency>
+        <!-- slf4j-api（@Slf4j生成代码要用到LoggerFactory） -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
         </dependency>
 
 
@@ -75,7 +81,7 @@
         <dependency>
             <groupId>org.mybatis.spring.boot</groupId>
             <artifactId>mybatis-spring-boot-starter</artifactId>
-            <version>3.0.4</version>
+            <version>4.0.1</version>
         </dependency>
 
 
@@ -83,7 +89,7 @@
         <dependency>
             <groupId>com.github.pagehelper</groupId>
             <artifactId>pagehelper-spring-boot-starter</artifactId>
-            <version>2.1.0</version>
+            <version>4.1.1</version>
         </dependency>
 
 
@@ -123,11 +129,11 @@
         </dependency>
 
 
-        <!-- Knife4j OpenAPI3 Jakarta -->
+        <!-- Knife4j OpenAPI3 (Spring Boot 4) -->
         <dependency>
-            <groupId>com.github.xiaoymin</groupId>
-            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
-            <version>4.5.0</version>
+            <groupId>com.baizhukui</groupId>
+            <artifactId>knife4j-openapi3-boot4-spring-boot-starter</artifactId>
+            <version>5.4.0</version>
         </dependency>
 
 
@@ -166,19 +172,71 @@
             <artifactId>jspecify</artifactId>
             <version>1.0.0</version>
         </dependency>
-
+        <!--Qdrant-->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-vector-store-qdrant</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <!-- 通义千问(DashScope)通过 OpenAI 兼容协议接入，版本由 spring-ai-bom 统一管理 -->
+        <!--用于阿里云 Embedding (利用 OpenAI 兼容模式)-->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-openai</artifactId>
+        </dependency>
+        <!--用于 DeepSeek 官方对话模型-->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-deepseek</artifactId>
+        </dependency>
+        <!--RAG 检索增强：提供 QuestionAnswerAdvisor-->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-vector-store-advisor</artifactId>
+        </dependency>
 
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- SpringAI BOM：统一管理所有 Spring AI 依赖版本 -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>2.0.1</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
 
     <build>
         <plugins>
-
-            <!-- Spring Boot打包插件 -->
+            <!-- SpringBoot打包插件 -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
+            <!-- JDK25 编译器插件，版本至少3.13.0+，推荐3.14.1 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.14.1</version>
+                <configuration>
+                    <release>25</release>
+                    <encoding>UTF-8</encoding>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+
 </project>
