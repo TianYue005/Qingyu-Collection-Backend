@@ -1,6 +1,5 @@
 package com.wang.tradingplatform.controller;
 
-import com.wang.tradingplatform.utils.Data2Qdrant;
 import com.wang.tradingplatform.utils.ParamUtil;
 import com.wang.tradingplatform.utils.UserContext;
 import io.swagger.v3.oas.annotations.Operation;

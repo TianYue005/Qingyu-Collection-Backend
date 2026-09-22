@@ -23,8 +23,7 @@ public class ItemQueryParam {
     //还没想好
     String sortRules;//排序规则 暂时还没有想好相关用法 todo 暂未启用
     /*圈子模块*/
-    //活动部分的状态
-    Integer status;//0 未开始，1 已开始 2 已结束
+    private String option;
     /*组团模块*/
     //组团的分类 自习，游戏，电影......
     String type;

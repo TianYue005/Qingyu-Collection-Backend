@@ -32,7 +32,7 @@ public class ItemsController {
         log.info("========== 添加商品 ==========");
         Boolean b = itemServices.add(uploadItemDTO);
         if (b) {
-            return Result.success();
+            return Result.success("上架成功");
         }
         return Result.error("商品上架失败");
     }

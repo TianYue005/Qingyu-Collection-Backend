@@ -109,4 +109,22 @@ public interface ForumMapper {
 
     //我参与的跑腿任务
     List<Circle> myTakeTask(Long currentUserId);
+
+    //热门活动的点赞接口
+    Integer setActivityLike(Long activityId, Long currentUserId);
+
+    //加入热门活动
+    void joinActivity(Long activityId, Long currentUserId);
+
+    //我加入的热门活动
+    List<Circle> myJoinActivity(Long currentUserId);
+
+    //查看我发布的动态
+    List<Circle> selectMyDynamic(Long currentUserId);
+
+    //查看我发布的任务
+    List<Circle> selectMyTask(Long currentUserId);
+
+    //查看我发布的活动
+    List<Circle> selectMyActivity(Long currentUserId);
 }

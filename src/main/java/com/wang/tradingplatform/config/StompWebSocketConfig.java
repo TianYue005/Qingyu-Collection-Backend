@@ -3,6 +3,7 @@ package com.wang.tradingplatform.config;
 import com.wang.tradingplatform.mapper.UserMapper;
 import com.wang.tradingplatform.utils.JwtTokenUtil;
 import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
@@ -25,6 +26,22 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final JwtTokenUtil jwtTokenUtil;
     private final UserMapper userMapper;
     private final String USER_ID = "userId";
+
+
+    @Value("${stomp.relay.host:localhost}")
+    private String relayHost;
+
+    @Value("${stomp.relay.port:61613}")
+    private int relayPort;
+
+    @Value("${stomp.relay.username:admin}")
+    private String relayUsername;
+
+    @Value("${stomp.relay.password:123456}")
+    private String relayPassword;
+
+    @Value("${stomp.relay.vhost:/}")
+    private String relayVhost;
 
     // 构造函数注入
     public StompWebSocketConfig(JwtTokenUtil jwtTokenUtil, UserMapper userMapper) {
@@ -102,14 +119,18 @@ public class StompWebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         // 全局客户端接收消息的前缀
-        registry.enableStompBrokerRelay("/topic", "/queue")
-                .setRelayHost("192.168.72.128")
-                .setRelayPort(61613)
-                .setClientLogin("admin")
-                .setClientPasscode("123456")
-                .setSystemLogin("admin")
-                .setSystemPasscode("123456")
-                .setVirtualHost("/");
+        // 私聊通过 /exchange/amq.direct 订阅，使 RabbitMQ 创建断开订阅后自动删除的队列。
+        registry.enableStompBrokerRelay("/topic", "/exchange")
+                .setRelayHost(relayHost)
+                .setRelayPort(relayPort)
+
+                .setClientLogin(relayUsername)
+                .setClientPasscode(relayPassword)
+
+                .setSystemLogin(relayUsername)
+                .setSystemPasscode(relayPassword)
+
+                .setVirtualHost(relayVhost);
         // 客户端发送消息到服务端的接口前缀
         registry.setApplicationDestinationPrefixes("/app");
         registry.setUserDestinationPrefix("/user");

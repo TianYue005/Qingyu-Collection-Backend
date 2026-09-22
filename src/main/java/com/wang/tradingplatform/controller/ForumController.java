@@ -33,7 +33,6 @@ public class ForumController {
     @Operation(summary = "添加组团信息")
     @PostMapping("/add")
     public Result<TeamUp> addTeamUp(@RequestBody TeamUp teamUp) {
-        ParamUtil.notNull(teamUp, "组团信息");
         forumService.add(teamUp);
         return Result.success(teamUp);
     }
@@ -128,7 +127,6 @@ public class ForumController {
     @Operation(summary = "添加 圈子动态 信息")
     @PostMapping("/add/dynamic")
     public Result<Object> addDynamic(@RequestBody Circle circle) {
-        ParamUtil.notNull(circle, "动态信息");
         if (!"Dynamics".equals(circle.getCategory())) {
             throw new BusinessException("传递类型错误");
         }
@@ -158,7 +156,6 @@ public class ForumController {
     @Operation(summary = "发布跑腿任务")
     @PostMapping("/add/task")
     public Result<Object> addTask(@RequestBody Circle circle) {
-        ParamUtil.notNull(circle, "任务信息");
         if (!"Task".equals(circle.getCategory())) {
             throw new BusinessException("传递类型错误");
         }
@@ -214,7 +211,7 @@ public class ForumController {
         return Result.success();
     }
 
-    //分页查询 热门活动   <TODO标记>
+    //分页查询 热门活动
     @Operation(summary = "分页查询 热门活动")
     @GetMapping("/select/activity")
     public Result<PageResult<Circle>> selectActivity(ItemQueryParam itemQueryParam) {
@@ -228,6 +225,32 @@ public class ForumController {
     public Result<PageResult<Circle>> searchActivity(@RequestParam String keyword) {
         ParamUtil.notBlank(keyword, "搜索关键词");
         PageResult<Circle> page = forumService.searchActivity(keyword);
+        return Result.success(page);
+    }
+
+    //热门活动点赞
+    @Operation(summary = "热门活动点赞")
+    @GetMapping("/activity/like/{activityId}")
+    public Result<Object> setActivityLike(@PathVariable Long activityId) {
+        ParamUtil.positive(activityId, "活动id");
+        forumService.setActivityLike(activityId);
+        return Result.success();
+    }
+
+    //加入热门活动
+    @Operation(summary = "加入热门活动")
+    @GetMapping("/join/activity/{activityId}")
+    public Result<Object> joinActivity(@PathVariable Long activityId) {
+        ParamUtil.positive(activityId, "活动id");
+        forumService.joinActivity(activityId);
+        return Result.success();
+    }
+
+    //我加入的热门活动
+    @Operation(summary = "我加入的热门活动")
+    @GetMapping("/take/myJoinActivity")
+    public Result<PageResult<Circle>> myJoinActivity(ItemQueryParam itemQueryParam) {
+        PageResult<Circle> page = forumService.myJoinActivity(itemQueryParam);
         return Result.success(page);
     }
 
@@ -306,5 +329,11 @@ public class ForumController {
         return Result.success(circle);
     }
 
+    //圈子相关 我的创建 三合一
+    @Operation(summary = "圈子相关 我的创建 三合一")
+    @GetMapping("/myCreate/circle")
+    public PageResult<Circle> myCreateCircle(ItemQueryParam itemQueryParam) {
+        return forumService.myCreateCircle(itemQueryParam);
+    }
 
 }

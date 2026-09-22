@@ -153,4 +153,10 @@ public interface UserMapper {
 
     //查看评价：target=0 自己评价别人，其他为别人评价自己
     List<EvaluateVO> selectEvaluate(@Param("param") ItemQueryParam itemQueryParam, @Param("userId") Long userId);
+
+    //查找是否存在该用户
+    Integer selectNumber(Long userid);
+
+    //交易风险评估
+    riskAssessment riskAssessment(Long userId);
 }

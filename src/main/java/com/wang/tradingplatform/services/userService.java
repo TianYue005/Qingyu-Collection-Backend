@@ -129,4 +129,7 @@ public interface userService {
 
     //查看评价：target=0 自己评价别人，其他为别人评价自己
     PageResult<EvaluateVO> selectEvaluate(ItemQueryParam itemQueryParam);
+
+    //交易风险评估
+    String riskAssessment(Long userid);
 }

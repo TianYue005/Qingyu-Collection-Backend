@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -272,7 +273,7 @@ public class userServiceImpl implements userService {
             Session.setSessionId(sessionId);//sessionId
             Session.setFromUid(CurrentUserId);//发送用户的id
             Session.setToUid(toUserId);//接受用户的id
-            Session.setCreateTime(LocalDateTime.now());//会话创建时间
+            Session.setCreateTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));//会话创建时间
             Session.setIsRead(0L);//设为未读 TODO先这个样子 忘了之前怎么计划的了
 
             userMapper.createChatSession(Session);
@@ -413,5 +414,23 @@ public class userServiceImpl implements userService {
             List<EvaluateVO> list = userMapper.selectEvaluate(itemQueryParam, UserContext.getCurrentUserId());
             return new PageResult<>(page.getTotal(), list);
         }
+    }
+
+    //交易风险评估
+    @Override
+    public String riskAssessment(Long userid) {
+        Long currentUserId = UserContext.getCurrentUserId();//当前用户的id
+        if (currentUserId == null || currentUserId == ' ') {
+            throw new BusinessException("用户未登录");
+        }
+        Integer row = userMapper.selectNumber(userid);
+        if (row < 0) {
+            throw new RuntimeException("该用户不允许查询其他人");
+        }
+        riskAssessment Assessment = userMapper.riskAssessment(userid);
+        return "被查询用户收到的的好评数量为" + Assessment.getGoodReview() +
+                "，到的的差评数量：" + Assessment.getBadReview() +
+                ",收到的评论数量：" + Assessment.getInCommentCnt() +
+                "被查询用户的售出数目：" + Assessment.getSellCnt();
     }
 }

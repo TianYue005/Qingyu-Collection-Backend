@@ -19,7 +19,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -40,6 +42,14 @@ public class itemsServicesImpl implements itemsServices {
         }
         if (uploadItemDTO.getOriginalPrice() != null && uploadItemDTO.getOriginalPrice().signum() < 0) {
             throw new BusinessException("原价不能为负数");
+        }
+        // 数据库价格字段为 DECIMAL(10,2)，最大 99999999.99，超出会插入失败
+        BigDecimal maxPrice = new BigDecimal("99999999.99");
+        if (uploadItemDTO.getPrice().compareTo(maxPrice) > 0) {
+            throw new BusinessException("售卖价格不能超过 99999999.99 元");
+        }
+        if (uploadItemDTO.getOriginalPrice() != null && uploadItemDTO.getOriginalPrice().compareTo(maxPrice) > 0) {
+            throw new BusinessException("原价不能超过 99999999.99 元");
         }
         Goods goods = new Goods();
         Long goodsId = snowflakeIdUtil.nextId();
@@ -123,7 +133,7 @@ public class itemsServicesImpl implements itemsServices {
         ParamUtil.positive(comment.getGoodsId(), "商品id");
         ParamUtil.notBlank(comment.getText(), "评论内容");
         comment.setUserId(UserContext.getCurrentUserId());
-        comment.setCreateTime(LocalDateTime.now());
+        comment.setCreateTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
         itemsMapper.addCommentItem(comment);
     }
 
@@ -197,7 +207,7 @@ public class itemsServicesImpl implements itemsServices {
         evaluate.setContent(dto.getContent());
         evaluate.setScore(dto.getScore());
         evaluate.setGoodsId(dto.getGoodsId());
-        evaluate.setCreateTime(LocalDateTime.now());
+        evaluate.setCreateTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
         return itemsMapper.insertEvaluate(evaluate) > 0;
     }
 }

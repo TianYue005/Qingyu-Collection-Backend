@@ -19,10 +19,10 @@
 
 
     <groupId>com.wang</groupId>
-    <artifactId>QingyuJi-Backend</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <artifactId>QingyuJi</artifactId>
+    <version>1.0.2</version>
 
-    <name>QingyuJi-Backend</name>
+    <name>QingyuJi</name>
     <description>二手交易平台后端</description>
 
 

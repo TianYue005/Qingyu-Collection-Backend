@@ -1,7 +1,7 @@
 package com.wang.tradingplatform.config;
 
 
-import com.wang.tradingplatform.utils.Data2Qdrant;
+import com.wang.tradingplatform.tools.Tools;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
@@ -27,7 +27,7 @@ public class RagConfig {
      * 未来若要扩展能力，只允许注册"只读查询"类工具（SELECT），禁止注册增删改类工具。
      */
     @Bean
-    public ChatClient ragChatClient(@Qualifier("deepSeekChatModel") ChatModel chatModel, VectorStore vectorStore, Data2Qdrant data2Qdrant) {
+    public ChatClient ragChatClient(@Qualifier("deepSeekChatModel") ChatModel chatModel, VectorStore vectorStore, Tools tools) {
         // 构建 RAG 顾问，设置相似度阈值和返回文档数量
         var advisor = QuestionAnswerAdvisor.builder(vectorStore)
                 .searchRequest(SearchRequest.builder()
@@ -35,12 +35,12 @@ public class RagConfig {
                         .topK(4)                  // 检索文档数量
                         .build())
                 .build();
-        /*var toolProvider = MethodToolCallbackProvider.builder()
-                .toolObjects(data2Qdrant)   // 把 @Tool 方法注册进去
-                .build();*/
+        var toolProvider = MethodToolCallbackProvider.builder()
+                .toolObjects(tools)   // 把 @Tool 方法注册进去
+                .build();
         return ChatClient.builder(chatModel)
                 .defaultAdvisors(advisor)
-                //.defaultTools(toolProvider)
+                .defaultTools(toolProvider)
                 .build();
     }
 

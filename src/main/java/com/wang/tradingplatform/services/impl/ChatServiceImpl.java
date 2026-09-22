@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -54,7 +55,7 @@ public class ChatServiceImpl implements ChatService {
         // 1. 生成唯一ID并补齐时间字段  目前两个id（主键id与会话id）是相同的
         long msgId = snowflakeIdUtil.nextId();
         message.setId(msgId);
-        message.setSendTime(LocalDateTime.now());//发送时间
+        message.setSendTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));//发送时间
         message.setIsRead(0);//是否已读
 
         // 2. 投递到 RabbitMQ，由消费者异步写入 MySQL  这里的message应该是所有内容都包含的
@@ -150,7 +151,7 @@ public class ChatServiceImpl implements ChatService {
      * 群聊 Redis Key：chat:room:{groupId}:{yyyyMMdd}
      */
     private String buildGroupRedisKey(Long groupId, Long sessionId) {
-        return "chat:room:" + groupId + ":" + LocalDate.now().format(DATE_FMT);
+        return "chat:room:" + groupId + ":" + LocalDate.now(ZoneId.of("Asia/Shanghai")).format(DATE_FMT);
     }
 
     /**
@@ -164,8 +165,8 @@ public class ChatServiceImpl implements ChatService {
      * 计算到当天 24:00 的剩余秒数
      */
     private long secondsUntilMidnight() {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime midnight = LocalDateTime.of(LocalDate.now().plusDays(1), LocalTime.MIDNIGHT);
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Shanghai"));
+        LocalDateTime midnight = LocalDateTime.of(LocalDate.now(ZoneId.of("Asia/Shanghai")).plusDays(1), LocalTime.MIDNIGHT);
         return ChronoUnit.SECONDS.between(now, midnight);
     }
 

@@ -333,5 +333,29 @@
         </where>
         ORDER BY e.create_time DESC
     </select>
+    <!--查找是否存在该用户-->
+    <select id="selectNumber" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM user WHERE user_id=#{userid}
+    </select>
+    <!--交易风险评估-->
+    <select id="riskAssessment" resultType="com.wang.tradingplatform.pojo.entity.riskAssessment">
+        SELECT
+        g.sellCnt,
+        stat.good_review,
+        stat.bad_review,
+        stat.in_comment_cnt
+        FROM (
+        SELECT COUNT(*) AS sellCnt
+        FROM goods
+        WHERE user_id = #{userId}
+        ) g
+        CROSS JOIN (
+        SELECT
+        COUNT(CASE WHEN evaluated_id = #{userId} AND score &gt;= 3 THEN 1 END) AS good_review,
+        COUNT(CASE WHEN evaluator_id = #{userId} AND score &lt;= 3 THEN 1 END) AS bad_review,
+        COUNT(CASE WHEN evaluated_id = #{userId} THEN 1 END) AS in_comment_cnt
+        FROM evaluate
+        ) stat;
+    </select>
 
 </mapper>

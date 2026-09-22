@@ -22,7 +22,6 @@ public class Circle {
     private String picture;
     private String startTime;
     private String endTime;
-    private Integer status;//0 未开始，1 已开始 2 已结束
     private Integer participant;
     private String category;
     //点赞数（详情查询时返回）
@@ -36,4 +35,5 @@ public class Circle {
     //这两个是不一样的
     private Boolean total;//是否有人接单
     private Integer likeNumber;//点赞数
+    private Integer NumberOfParticipants;//活动的参加人数
 }

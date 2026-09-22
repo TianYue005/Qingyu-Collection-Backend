@@ -11,12 +11,6 @@ public class AliyunOSSProperties {
     private String endpoint;
     private String bucketName;
     private String region;
-    @Override
-    public String toString() {
-        return "AliyunOSSProperties{" +
-                "bucketName='" + bucketName + '\'' +
-                ", endpoint='" + endpoint + '\'' +
-                ", region='" + region + '\'' +
-                '}';
-    }
+    private String accessKeyId;
+    private String accessKeySecret;
 }

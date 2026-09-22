@@ -18,7 +18,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
 
@@ -43,16 +43,17 @@ public class ForumServiceImpl implements ForumService {
         ParamUtil.notNull(teamUp, "组团信息");
         ParamUtil.notBlank(teamUp.getTitle(), "组团标题");
         ParamUtil.notBlank(teamUp.getStartTime(), "组团开始时间");
+
+
         String type = teamUp.getType();
-        if (teamUp.getPeopleNumber() == null || teamUp.getPeopleNumber() > 10 || teamUp.getPeopleNumber() < 1) {
-            throw new BusinessException("允许参加的人数必须在1到10之间");
-        }
         if (!ALLOWED_TYPES.contains(type)) {
             throw new TeamUpTypeException("传递的组团分类是不被允许的类型");
         }
+        if (teamUp.getPeopleNumber() == null || teamUp.getPeopleNumber() > 10 || teamUp.getPeopleNumber() < 1) {
+            throw new BusinessException("允许参加的人数必须在1到10之间");
+        }
         Long currentUserId = UserContext.getCurrentUserId();
 
-        teamUp.setCreateAt(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));//设置创建时间
         teamUp.setLeader(currentUserId);//设置领导者id
         teamUp.setLeaderName(userMapper.selectUserNameById(currentUserId));
         forumMapper.add(teamUp);
@@ -101,7 +102,9 @@ public class ForumServiceImpl implements ForumService {
     @Override
     public void addTask(Circle circle) {
         ParamUtil.notNull(circle, "任务信息");
-        ParamUtil.notBlank(circle.getTitle(), "任务标题");
+        ParamUtil.notBlank(circle.getRequestContent(), "任务标题");
+        ParamUtil.notBlank(circle.getType(), "任务类型");
+        ParamUtil.notBlank(circle.getCategory(), "缺少必要的区分类型");
         circle.setUserId(UserContext.getCurrentUserId());
         forumMapper.addTask(circle);
     }
@@ -126,7 +129,6 @@ public class ForumServiceImpl implements ForumService {
         ParamUtil.notNull(circle, "活动信息");
         ParamUtil.notBlank(circle.getTitle(), "活动标题");
         circle.setUserId(UserContext.getCurrentUserId());
-        circle.setStatus(0);
         forumMapper.addActivity(circle);
     }
 
@@ -247,7 +249,7 @@ public class ForumServiceImpl implements ForumService {
         ParamUtil.positive(comment.getTeamupId(), "组团id");
         ParamUtil.notBlank(comment.getText(), "评论内容");
         comment.setUserId(UserContext.getCurrentUserId());
-        comment.setCreateTime(LocalDateTime.now());
+        comment.setCreateTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
         forumMapper.addComment(comment);
         //热度相关
         redisUtil.zAdd(redisUtil.REDIS_HOT_SORT_KEY, comment.getTeamupId(), 100);
@@ -292,7 +294,7 @@ public class ForumServiceImpl implements ForumService {
         ParamUtil.positive(comment.getCircleId(), "圈子id");
         ParamUtil.notBlank(comment.getText(), "评论内容");
         comment.setUserId(UserContext.getCurrentUserId());
-        comment.setCreateTime(LocalDateTime.now());
+        comment.setCreateTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
         forumMapper.addCommentCircle(comment);
     }
 
@@ -358,6 +360,10 @@ public class ForumServiceImpl implements ForumService {
     //根据id列表查询对应的简略信息
     @Override
     public List<Circle> selectSimpleInfoByList(List<Long> idList) {
+        //空列表时不执行SQL，避免生成"WHERE id in"这种不完整SQL导致语法错误
+        if (idList == null || idList.isEmpty()) {
+            return List.of();
+        }
         return forumMapper.selectSimpleInfoByList(idList);
     }
 
@@ -389,6 +395,63 @@ public class ForumServiceImpl implements ForumService {
                 itemQueryParam.getPageNumber(),
                 itemQueryParam.getPageSize())) {
             List<Circle> list = forumMapper.myTakeTask(UserContext.getCurrentUserId());
+            return new PageResult<>(page.getTotal(), list);
+        }
+    }
+
+    //热门活动的点赞接口
+    @Override
+    public void setActivityLike(Long activityId) {
+        ParamUtil.positive(activityId, "活动id");
+        Integer row = forumMapper.setActivityLike(activityId, UserContext.getCurrentUserId());
+        if (row == 0) {
+            throw new BusinessException("不可以重复点赞");
+        }
+        //为它在redis临时热度榜单中添加score（与圈子点赞保持一致）
+        redisUtil.zAdd("like:circle", activityId, 50);
+    }
+
+    //加入热门活动
+    @Override
+    public void joinActivity(Long activityId) {
+        ParamUtil.positive(activityId, "活动id");
+        try {
+            forumMapper.joinActivity(activityId, UserContext.getCurrentUserId());
+        } catch (DuplicateKeyException e) {
+            throw new BusinessException("你已加入过该活动");
+        }
+    }
+
+    //我加入的热门活动
+    @Override
+    public PageResult<Circle> myJoinActivity(ItemQueryParam itemQueryParam) {
+        ParamUtil.checkPage(itemQueryParam);
+        try (Page<Circle> page = PageHelper.startPage(
+                itemQueryParam.getPageNumber(),
+                itemQueryParam.getPageSize())) {
+            List<Circle> list = forumMapper.myJoinActivity(UserContext.getCurrentUserId());
+            return new PageResult<>(page.getTotal(), list);
+        }
+    }
+
+    //圈子相关 我的创建 三合一
+    @Override
+    public PageResult<Circle> myCreateCircle(ItemQueryParam itemQueryParam) {
+        ParamUtil.checkPage(itemQueryParam);
+        String option = itemQueryParam.getOption();
+        try (Page<Circle> page = PageHelper.startPage(
+                itemQueryParam.getPageNumber(),
+                itemQueryParam.getPageSize())) {
+            List<Circle> list;
+            if ("Dynamics".equals(option)) {
+                list = forumMapper.selectMyDynamic(UserContext.getCurrentUserId());
+            } else if ("Task".equals(option)) {
+                list = forumMapper.selectMyTask(UserContext.getCurrentUserId());
+            } else if ("Event".equals(option)) {
+                list = forumMapper.selectMyActivity(UserContext.getCurrentUserId());
+            } else {
+                throw new BusinessException("传递的圈子的类型不正确");
+            }
             return new PageResult<>(page.getTotal(), list);
         }
     }

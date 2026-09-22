@@ -4,9 +4,7 @@ import com.wang.tradingplatform.pojo.entity.*;
 import com.wang.tradingplatform.pojo.vo.CommentCircleVO;
 import com.wang.tradingplatform.pojo.vo.CommentVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
-import com.wang.tradingplatform.pojo.vo.Result;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -100,4 +98,16 @@ public interface ForumService {
 
     //我参与的跑腿任务
     PageResult<Circle> myTakeTask(ItemQueryParam itemQueryParam);
+
+    //热门活动的点赞接口
+    void setActivityLike(Long activityId);
+
+    //加入热门活动
+    void joinActivity(Long activityId);
+
+    //我加入的热门活动
+    PageResult<Circle> myJoinActivity(ItemQueryParam itemQueryParam);
+
+    //圈子相关 我的创建 三合一
+    PageResult<Circle> myCreateCircle(ItemQueryParam itemQueryParam);
 }

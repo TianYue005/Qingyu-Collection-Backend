@@ -2,56 +2,53 @@ spring:
   application:
     name: tradingPlatform
   profiles:
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:prod}
   servlet:
     multipart:
       max-request-size: 5MB
       max-file-size: 5MB
   data:
     redis:
-      host: 127.0.0.1
-      port: 6379
-      password: # 无密码
-      database: 0 # 数据库库号
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:} # 无密码
+      database: ${REDIS_DATABASE:0} # 数据库库号
       lettuce:
         pool:
-          max-active: 8 # 最大连接数
-          max-idle: 8 # 最大空闲连接数
+          max-active: ${REDIS_MAX_ACTIVE:8} # 最大连接数
+          max-idle: ${REDIS_MAX_IDLE:8} # 最大空闲连接数
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/tradingplatform?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    driver-class-name: ${DB_DRIVER:com.mysql.cj.jdbc.Driver}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/tradingplatform?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai}
   ai:
     model:
       # 对话模型指定为 DeepSeek，避免与 OpenAI 的 ChatModel Bean 冲突
-      chat: deepseek
+      chat: ${AI_CHAT_MODEL:deepseek}
     deepseek:
       # DeepSeek 官方对话模型（密钥请在环境变量中配置）
       api-key: ${DEEPSEEK_API_KEY:}
-      base-url: https://api.deepseek.com
+      base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
       chat:
-        model: deepseek-chat
+        model: ${DEEPSEEK_CHAT_MODEL:deepseek-chat}
     openai:
-      # 阿里云百炼 Embedding（走 OpenAI 兼容协议）
       api-key: ${DASHSCOPE_API_KEY:}
-      base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      base-url: ${DASHSCOPE_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode/v1}
       embedding:
-        model: text-embedding-v3
+        model: ${EMBEDDING_MODEL:text-embedding-v3}
 mybatis:
   type-handlers-package: com.wang.tradingplatform.utils
   configuration:
     map-underscore-to-camel-case: true # 开启下环线转驼峰命名
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 打印sql日志
 jwt:
-  secret: ${jwt.secret}
-  expiration: ${jwt.expiration}
-  tokenTitle: Authorization
+  secret: ${JWT_SECRET:}
+  expiration: ${JWT_EXPIRATION:86400000}
+  tokenTitle: ${JWT_TOKEN_TITLE:Authorization}
 pagehelper:
-  # 数据库方言，自动识别mysql
+  # 识别mysql
   helperDialect: mysql
   # 是否开启合理化分页：pageNum<=1 自动变为1，pageNum超过总页查最后一页
   reasonable: true
   # 支持通过pageSizeZero参数查询全部数据
   pageSizeZero: false
-task:
-  daily-four-cron: 0 0 4 * * ?
 

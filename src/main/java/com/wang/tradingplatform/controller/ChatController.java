@@ -48,7 +48,7 @@ public class ChatController {
 
     /**
      * 发送私聊消息
-     * 将接收到的消息保存并转发给订阅了"/queue/private" 的特定用户
+     * 将接收到的消息保存并转发给订阅了"/user/exchange/amq.direct/private" 的特定用户
      *
      * @param principal
      * @param chatMessage
@@ -64,7 +64,7 @@ public class ChatController {
             //发送私聊消息
             messagingTemplate.convertAndSendToUser(
                     String.valueOf(chatMessage.getToUid()),  // 参数 1：接收者的用户ID
-                    "/queue/private",                        // 参数 2：目的地的后续路径
+                    "/exchange/amq.direct/private",           // 使用自动删除的会话订阅队列
                     chatMessage                              // 参数 3：消息体载荷
             );
         } else if (chatMessage.getType() == 1) {
@@ -145,16 +145,18 @@ public class ChatController {
         ParamUtil.positive(tradeRequest.getGoodsId(), "商品id");
         ParamUtil.positive(tradeRequest.getSessionId(), "会话id");
         ParamUtil.notNull(tradeRequest.getSelect(), "处理选项");
-        ParamUtil.notNull(tradeRequest.getTradeState(), "交易状态");
         //先看该用户是否有权利
         Integer row = userService.getPermission(UserContext.getCurrentUserId(), tradeRequest.getGoodsId());
         if (row > 0) {
             //将trade_transaction表进行数据同步
             userService.HandleTradeRequest(tradeRequest.getSelect(), tradeRequest.getGoodsId(), tradeRequest.getSessionId());
-            if (tradeRequest.getTradeState() == 2) {
+            //select 与 tradeState 含义重复，统一用 select 判断（2 同意）
+            if (tradeRequest.getSelect() == 2) {
                 //将goods表进行同步
                 userService.saleGoods(tradeRequest.getGoodsId(), tradeRequest.getToUid(), UserContext.getCurrentUserId());
             }
+            //删除交易状态缓存（该缓存无过期时间），否则前端再次查询仍会命中旧状态
+            redisUtil.delete("TradeState:" + tradeRequest.getSessionId() + tradeRequest.getGoodsId());
         }
     }
 
