@@ -15,6 +15,14 @@ public class UploadItemDTO {
     private BigDecimal price;
     //原价
     private BigDecimal originalPrice;
-    //规格属性
+    //规格属性  电子产品，饰品这一类的标签
     private String[] specs;
+    //标签  99新，急出这一类的标签
+    private String[] tag;
+    //用户id 后端提供
+    private Long userId;
+    //标签  99新，急出这一类的标签  这个是为了好存储新加的
+    private Integer IntTag;
+    //商品id  后端提供
+    private Long goodsId;
 }

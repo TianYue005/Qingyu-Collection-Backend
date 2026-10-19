@@ -60,6 +60,10 @@
     <update id="FinishTrade">
         UPDATE goods SET finished=1 WHERE goods_id=#{goodsId}
     </update>
+    <!--更改名字-->
+    <update id="alterName">
+        UPDATE user SET user_name=#{name} WHERE user_id=#{userId}
+    </update>
     <delete id="favouriteRM">
         DELETE FROM favourite WHERE user_id=#{userId} AND item_id=#{id}
     </delete>
@@ -356,6 +360,21 @@
         COUNT(CASE WHEN evaluated_id = #{userId} THEN 1 END) AS in_comment_cnt
         FROM evaluate
         ) stat;
+    </select>
+    <!--别的用户的详情界面-->
+    <select id="selectThisUserDetail" resultType="com.wang.tradingplatform.pojo.entity.User">
+        SELECT user_name, user_id, level, credit, status
+        FROM user WHERE user_id=#{userId}
+    </select>
+    <!--查询自己对别人的评价-->
+    <select id="reviewsReceived" resultType="com.wang.tradingplatform.pojo.vo.EvaluateVO">
+        SELECT id, evaluator_id, evaluated_id, content, score, create_time, goods_id
+        FROM evaluate WHERE evaluator_id=#{userid}
+    </select>
+    <!--查询别人对自己的评价-->
+    <select id="reviews" resultType="com.wang.tradingplatform.pojo.vo.EvaluateVO">
+        SELECT id, evaluator_id, evaluated_id, content, score, create_time, goods_id
+        FROM evaluate WHERE evaluated_id=#{userid}
     </select>
 
 </mapper>

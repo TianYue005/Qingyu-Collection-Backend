@@ -1,5 +1,6 @@
 package com.wang.tradingplatform.mapper;
 
+import com.wang.tradingplatform.pojo.dto.UploadItemDTO;
 import com.wang.tradingplatform.pojo.entity.*;
 import com.wang.tradingplatform.pojo.vo.CommentGoodsVO;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
@@ -12,16 +13,16 @@ import java.util.List;
 @Mapper
 public interface ItemsMapper {
     //上架商品
-    int insert(Goods items);
+    void insert(UploadItemDTO uploadItemDTO);
 
     //根据商品ID查找商品
     List<GoodsVO> selectById(Long id);
 
     //分页查询
-    List<GoodsVO> page(ItemQueryParam itemQueryParam,Long userId);
+    List<GoodsVO> page(Long userId);
 
-    //插入商品图片
-    int insertImage(GoodsImage goodsImage);
+    //批量插入商品图片
+    int insertImages(List<GoodsImage> goodsImages);
 
     //根据商品ID查询图片列表
     List<GoodsImage> selectImagesByGoodsId(Long goodsId);
@@ -30,7 +31,7 @@ public interface ItemsMapper {
     GoodsVO findGoodsById(Long id);
 
     //根据关键词查询相关商品信息
-    List<GoodsVO> selectByKeyword(String keyword,Long userId);
+    List<GoodsVO> selectByKeyword(String keyword, Long userId);
 
     //根据用户id查找用户发布的商品
     List<GoodsVO> selectByUserId(Long currentUserId);
@@ -39,10 +40,10 @@ public interface ItemsMapper {
     List<GoodsImage> selectImagesByGoodsIds(List<Long> goodsIds);
 
     //查到的数据是没有图片的
-    List<GoodsVO> selectFavourite(@Param("param") ItemQueryParam itemQueryParam,@Param("currentUserId") Long currentUserId);
+    List<GoodsVO> selectFavourite(@Param("param") ItemQueryParam itemQueryParam, @Param("currentUserId") Long currentUserId);
 
     //商品评论
-    void addCommentItem( CommentGoods comment);
+    void addCommentItem(CommentGoods comment);
 
     //查看商品评论
     List<CommentGoodsVO> selectItemComment(Long goodsId);
@@ -64,4 +65,7 @@ public interface ItemsMapper {
 
     //评价交易对方
     int insertEvaluate(Evaluate evaluate);
+
+    //存储商品tag信息
+    void insertTagInformation(UploadItemDTO uploadItemDTO);
 }

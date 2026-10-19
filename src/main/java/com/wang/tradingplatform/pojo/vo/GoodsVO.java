@@ -31,4 +31,6 @@ public class GoodsVO {
     private Integer imgHeight;
     //是否有评价 1为有 0为无
     private Integer hasEvaluate;
+    //信誉分
+    private Integer credit;
 }

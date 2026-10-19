@@ -8,10 +8,7 @@ import com.wang.tradingplatform.mapper.UserMapper;
 import com.wang.tradingplatform.pojo.dto.LoginDTO;
 import com.wang.tradingplatform.pojo.dto.RegisterDTO;
 import com.wang.tradingplatform.pojo.entity.*;
-import com.wang.tradingplatform.pojo.vo.ChatMessageListVO;
-import com.wang.tradingplatform.pojo.vo.EvaluateVO;
-import com.wang.tradingplatform.pojo.vo.GoodsVO;
-import com.wang.tradingplatform.pojo.vo.PageResult;
+import com.wang.tradingplatform.pojo.vo.*;
 import com.wang.tradingplatform.services.userService;
 import com.wang.tradingplatform.utils.*;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +22,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -44,7 +40,7 @@ public class userServiceImpl implements userService {
      * 注册功能
      *
      * @param registerDTO 注册请求参数
-     * @return
+     * @return 注册结果消息
      */
     @Override
     public String register(RegisterDTO registerDTO) {
@@ -78,8 +74,8 @@ public class userServiceImpl implements userService {
     /**
      * 用户登录
      *
-     * @param loginDTO
-     * @return
+     * @param loginDTO 登录请求参数
+     * @return 登录结果（成功时返回 token）
      */
     @Override
     public String login(LoginDTO loginDTO) {
@@ -98,11 +94,18 @@ public class userServiceImpl implements userService {
         return token;
     }
 
+    //更改名字
+    @Override
+    public Boolean alterName(String name) {
+        Integer num = userMapper.alterName(name,UserContext.getCurrentUserId());
+        return num > 0;
+    }
+
     /**
      * 根据用户账号查找对应的用户名
      *
-     * @param account
-     * @return
+     * @param account 账号
+     * @return 用户名
      */
     @Override
     public String selectName(String account) {
@@ -112,8 +115,8 @@ public class userServiceImpl implements userService {
     /**
      * 根据用户账号查询用户Id
      *
-     * @param account
-     * @return
+     * @param account 账号
+     * @return 用户id
      */
     @Override
     public Long selectId(String account) {
@@ -123,8 +126,8 @@ public class userServiceImpl implements userService {
     /**
      * 根据用户Id查询对应的用户名与账号
      *
-     * @param userId
-     * @return
+     * @param userId 用户id
+     * @return 用户信息
      */
     @Override
     public User selectAccountAndName(Long userId) {
@@ -149,8 +152,8 @@ public class userServiceImpl implements userService {
     /**
      * 根据传递的sessionId获取历史消息
      *
-     * @param itemQueryParam
-     * @return
+     * @param itemQueryParam 查询参数（含 sessionId、pageNumber、pageSize）
+     * @return 历史消息分页结果
      */
     @Override
     public PageResult<ChatMessage> selectHistory(ItemQueryParam itemQueryParam) {
@@ -183,8 +186,8 @@ public class userServiceImpl implements userService {
     /**
      * 添加收藏功能
      *
-     * @param id
-     * @return
+     * @param id 商品id
+     * @return 影响行数
      */
     @Override
     public int favourite(Long id) {
@@ -195,7 +198,8 @@ public class userServiceImpl implements userService {
     /**
      * 查看收藏功能
      *
-     * @return
+     * @param itemQueryParam 分页参数
+     * @return 收藏商品分页结果
      */
     @Override
     public PageResult<GoodsVO> selectFavourite(ItemQueryParam itemQueryParam) {
@@ -207,10 +211,10 @@ public class userServiceImpl implements userService {
     }
 
     /**
-     * 得到账号基本信息
+     * 得到当前登录用户的账号基本信息
      *
-     * @param account
-     * @return
+     * @param account 账号（仅做非空校验）
+     * @return 用户信息
      */
     @Override
     public User selectAccountInfo(String account) {
@@ -221,8 +225,7 @@ public class userServiceImpl implements userService {
     /**
      * 修改密码
      *
-     * @param password
-     * @return
+     * @param password 新密码
      */
     @Override
     public void updatePassword(String password) {
@@ -246,9 +249,9 @@ public class userServiceImpl implements userService {
      * 不仅在数据库添加了会话数据
      * 也为会话的关联表设置了相关商品字段（如果传递了的话）
      *
-     * @param toUserId
-     * @param goodsId
-     * @return
+     * @param toUserId 目标用户id
+     * @param goodsId 商品id（0 表示不关联商品）
+     * @return 会话id
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -330,23 +333,32 @@ public class userServiceImpl implements userService {
         return vo;
     }
 
-    //拒绝或者接受交易请求
-    //交易状态 0 未确认 1 已有请求 2已同意请求 3已拒绝
+    /**
+     * 处理交易请求（同意/拒绝）
+     * 将"校验权限 + 更新交易状态 + 同意时同步商品出售状态"作为一个事务整体
+     *
+     * @param select    处理选项（2 表示同意）
+     * @param goodsId   商品id
+     * @param sessionId 会话id
+     * @param toUid     交易对方id
+     * @return 是否有权限处理该交易（无权限返回 false，不做任何改动）
+     */
     @Override
-    public void HandleTradeRequest(Integer select, Long goods_id, Long session_id) {
-        userMapper.HandleTradeRequest(select, goods_id, session_id);
-    }
-
-    //先看该用户是否有权利拒绝或者同意
-    @Override
-    public Integer getPermission(Long currentUserId, Long goodsId) {
-        return userMapper.getPermission(currentUserId, goodsId);
-    }
-
-    //同步goods表的购买人id
-    @Override
-    public void saleGoods(Long goodsId, Long toUid, Long currentUid) {
-        userMapper.updateGoodsSold(goodsId, toUid, currentUid);
+    @Transactional(rollbackFor = Exception.class)
+    public boolean handleTradeRequest(Integer select, Long goodsId, Long sessionId, Long toUid) {
+        //先看该用户是否有权利同意或者拒绝（只有商品卖家有权处理）
+        Integer row = userMapper.getPermission(UserContext.getCurrentUserId(), goodsId);
+        if (row == null || row <= 0) {
+            return false;
+        }
+        //将trade_transaction表进行数据同步
+        userMapper.HandleTradeRequest(select, goodsId, sessionId);
+        //select 与 tradeState 含义重复，统一用 select 判断（2 同意）
+        if (select != null && select == 2) {
+            //将goods表进行同步
+            userMapper.updateGoodsSold(goodsId, toUid, UserContext.getCurrentUserId());
+        }
+        return true;
     }
 
     //当前用户的待处理交易
@@ -411,16 +423,15 @@ public class userServiceImpl implements userService {
     public PageResult<EvaluateVO> selectEvaluate(ItemQueryParam itemQueryParam) {
         ParamUtil.checkPage(itemQueryParam);
         try (Page<EvaluateVO> page = PageHelper.startPage(itemQueryParam.getPageNumber(), itemQueryParam.getPageSize())) {
-            List<EvaluateVO> list = userMapper.selectEvaluate(itemQueryParam, UserContext.getCurrentUserId());
+            List<EvaluateVO> list = userMapper.selectEvaluate(itemQueryParam, itemQueryParam.getUserId());
             return new PageResult<>(page.getTotal(), list);
         }
     }
 
     //交易风险评估
     @Override
-    public String riskAssessment(Long userid) {
-        Long currentUserId = UserContext.getCurrentUserId();//当前用户的id
-        if (currentUserId == null || currentUserId == ' ') {
+    public String riskAssessment(Long currentUserId, Long userid) {
+        if (currentUserId == null) {
             throw new BusinessException("用户未登录");
         }
         Integer row = userMapper.selectNumber(userid);
@@ -432,5 +443,31 @@ public class userServiceImpl implements userService {
                 "，到的的差评数量：" + Assessment.getBadReview() +
                 ",收到的评论数量：" + Assessment.getInCommentCnt() +
                 "被查询用户的售出数目：" + Assessment.getSellCnt();
+    }
+
+    //别的用户的详情界面
+    @Override
+    public User selectThisUserDetail(Long userId) {
+        return userMapper.selectThisUserDetail(userId);
+    }
+
+    //查看用户相关的评价
+    @Override
+    public PageResult<EvaluateVO> selectReview(ItemQueryParam itemQueryParam) {
+
+        ParamUtil.checkPage(itemQueryParam);
+        try (Page<Goods> page = PageHelper.startPage(itemQueryParam.getPageNumber(), itemQueryParam.getPageSize())) {
+            ArrayList<EvaluateVO> list = new ArrayList<>();
+            if (itemQueryParam.getTarget() == 0) {
+                //查询自己对别人的评价
+                list.add(userMapper.reviewsReceived(itemQueryParam.getUserId()));
+            } else if (itemQueryParam.getTarget() == 1) {
+                //查询别人对自己的评价
+                list.add(userMapper.reviews(itemQueryParam.getUserId()));
+            } else {
+                throw new RuntimeException("非法的选项");
+            }
+            return new PageResult<>(page.getTotal(), list);
+        }
     }
 }

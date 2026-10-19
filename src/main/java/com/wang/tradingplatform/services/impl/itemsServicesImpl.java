@@ -12,6 +12,7 @@ import com.wang.tradingplatform.pojo.vo.CommentGoodsVO;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
 import com.wang.tradingplatform.services.itemsServices;
+import com.wang.tradingplatform.utils.ListUtil;
 import com.wang.tradingplatform.utils.ParamUtil;
 import com.wang.tradingplatform.utils.SnowflakeIdUtil;
 import com.wang.tradingplatform.utils.UserContext;
@@ -22,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -31,10 +32,25 @@ public class itemsServicesImpl implements itemsServices {
     private final ItemsMapper itemsMapper;
     private final SnowflakeIdUtil snowflakeIdUtil;
 
+    private final Set<String> setCategory = new HashSet<>(Set.of("电子产品", "饰品", "家居", "未知", "全部"));
+    private final Map<Integer,String> setTag = new HashMap<>(Map.ofEntries(
+            Map.entry(0, "全新未拆"),
+            Map.entry(1, "仅拆封"),
+            Map.entry(2, "轻微使用痕迹"),
+            Map.entry(3, "配件齐全"),
+            Map.entry(4, "保修期内"),
+            Map.entry(5, "支持验货"),
+            Map.entry(6, "不议价"),
+            Map.entry(7, "可换"),
+            Map.entry(8, "毕业出"),
+            Map.entry(9, "急用钱"),
+            Map.entry(10, "礼盒装")
+    ));
+
     //添加商品
     @Override
-    @Transactional
-    public Boolean add(UploadItemDTO uploadItemDTO) {
+    @Transactional(rollbackFor = Exception.class)
+    public void add(UploadItemDTO uploadItemDTO) {
         ParamUtil.notNull(uploadItemDTO, "商品信息");
         ParamUtil.notBlank(uploadItemDTO.getDescription(), "商品描述");
         if (uploadItemDTO.getPrice() == null || uploadItemDTO.getPrice().signum() < 0) {
@@ -51,34 +67,39 @@ public class itemsServicesImpl implements itemsServices {
         if (uploadItemDTO.getOriginalPrice() != null && uploadItemDTO.getOriginalPrice().compareTo(maxPrice) > 0) {
             throw new BusinessException("原价不能超过 99999999.99 元");
         }
-        Goods goods = new Goods();
+        HashSet<String> hSet = new HashSet<>(List.of(uploadItemDTO.getSpecs()));
+        //校验商品规格是否属于合法分类
+        if (!ListUtil.ListAIfListB(hSet, setCategory)) {
+            throw new BusinessException("商品规格不合法");
+        }
+        HashSet<String> hSet2 = new HashSet<>(List.of(uploadItemDTO.getSpecs()));
+        Integer l = ListUtil.ListAIfListB(hSet2, setTag);
+        if (l==null) {
+            throw new BusinessException("商品属性不合法");
+        }
         Long goodsId = snowflakeIdUtil.nextId();
-        goods.setGoodsId(goodsId);
-        //商品描述
-        goods.setGoodsDesc(uploadItemDTO.getDescription());
-        //售卖价格
-        goods.setPrice(uploadItemDTO.getPrice());
-        //原价
-        goods.setOriginalPrice(uploadItemDTO.getOriginalPrice());
-        //商品标签
-        goods.setTags(uploadItemDTO.getSpecs() != null ? String.join(",", uploadItemDTO.getSpecs()) : "");
-        //逻辑删除 0未删 1已删
-        goods.setIsDeleted(0);
-        goods.setUserId(UserContext.getCurrentUserId());
-        int rows = itemsMapper.insert(goods);
+        uploadItemDTO.setUserId(UserContext.getCurrentUserId());
+        uploadItemDTO.setGoodsId(goodsId);
+        uploadItemDTO.setIntTag(l);
+        //将商品基本信息存储
+        itemsMapper.insert(uploadItemDTO);
+        //存储商品tag信息
+        itemsMapper.insertTagInformation(uploadItemDTO);
         //插入商品图片（含宽高）
         Picture[] images = uploadItemDTO.getImage();
-        if (images != null) {
-            for (Picture pic : images) {
-                GoodsImage goodsImage = new GoodsImage();
-                goodsImage.setGoodsId(goodsId);
-                goodsImage.setImgUrl(pic.getUrl());
-                goodsImage.setImgWidth(pic.getWidth());
-                goodsImage.setImgHeight(pic.getHeight());
-                itemsMapper.insertImage(goodsImage);
-            }
+        if (images != null && images.length > 0) {
+            List<GoodsImage> goodsImages = Arrays.stream(images)
+                    .map(pic -> {
+                        GoodsImage goodsImage = new GoodsImage();
+                        goodsImage.setGoodsId(goodsId);
+                        goodsImage.setImgUrl(pic.getUrl());
+                        goodsImage.setImgWidth(pic.getWidth());
+                        goodsImage.setImgHeight(pic.getHeight());
+                        return goodsImage;
+                    })
+                    .toList();
+            itemsMapper.insertImages(goodsImages);
         }
-        return rows > 0;
     }
 
 
@@ -92,7 +113,8 @@ public class itemsServicesImpl implements itemsServices {
                 itemQueryParam.getPageSize(),
                 itemQueryParam.getSortRules())) {
             //调用mapper接口执行查询 查到的数据是没有图片的
-            List<GoodsVO> goodsList = itemsMapper.page(itemQueryParam, UserContext.getCurrentUserId());
+            List<GoodsVO> goodsList = itemsMapper.page(UserContext.getCurrentUserId());
+            System.out.println("信誉分：" + goodsList.getFirst().getCredit());
             //构造并返回分页结果对象，包含总记录数和当前页数据
             return new PageResult<GoodsVO>(page.getTotal(), goodsList);
         }
@@ -186,7 +208,7 @@ public class itemsServicesImpl implements itemsServices {
 
     //评价交易对方
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Boolean evaluate(EvaluateDTO dto) {
         ParamUtil.notNull(dto, "评价信息");
         ParamUtil.positive(dto.getGoodsId(), "商品id");

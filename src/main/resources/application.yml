@@ -29,7 +29,7 @@ spring:
       api-key: ${DEEPSEEK_API_KEY:}
       base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
       chat:
-        model: ${DEEPSEEK_CHAT_MODEL:deepseek-chat}
+        model: ${DEEPSEEK_CHAT_MODEL:deepseek-flash}
     openai:
       api-key: ${DASHSCOPE_API_KEY:}
       base-url: ${DASHSCOPE_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode/v1}

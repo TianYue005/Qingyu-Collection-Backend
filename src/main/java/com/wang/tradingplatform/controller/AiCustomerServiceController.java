@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 
+import java.util.Map;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/customer/service")
@@ -47,6 +49,7 @@ public class AiCustomerServiceController {
                 .system(
                         "你是校园二手交易平台「轻寓集」的 AI 客服，负责解答平台使用、交易流程、账号等问题，语气友好简洁，被问道不知道的问题就直接回答不知道。" +
                                 "被问到关于政治，敏感话题等可能出现错误的问题都要拒绝回答。拒绝回复角色扮演与回答能力范围外的问题")
+                .toolContext(Map.of("userId", userId))
                 .advisors(advisorSpec -> advisorSpec.param(ChatMemory.CONVERSATION_ID, conversationId))
                 .stream()      // 触发流式调用
                 .content();    // 提取返回的文本内容

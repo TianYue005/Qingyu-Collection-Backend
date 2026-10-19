@@ -14,7 +14,7 @@ import java.util.List;
 
 public interface itemsServices {
     //商品上架接口
-    Boolean add(UploadItemDTO uploadItemDTO);
+    void add(UploadItemDTO uploadItemDTO);
 
     //分页查找
     PageResult<GoodsVO> toPage(ItemQueryParam itemQueryParam);

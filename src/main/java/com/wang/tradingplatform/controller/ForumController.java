@@ -106,13 +106,6 @@ public class ForumController {
         return Result.success(page);
     }
 
-    /*//查询该评论在回复的那个评论 (废弃)
-    @Operation(summary = "查询该评论在回复的那个评论")
-    @GetMapping("/select/comment/{id}")//id是指要查看的评论
-    public Result<CommentVO> searchComment(@PathVariable Integer id) {
-        CommentVO commentVO = forumService.searchComment(id);
-        return Result.success(commentVO);
-    }*/
     //查看该评论之前的所有互动
     @Operation(summary = "查看该评论之前的所有互动")
     @GetMapping("/select/comment/{id}")

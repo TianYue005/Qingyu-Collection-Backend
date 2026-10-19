@@ -17,13 +17,17 @@ public class DailyFourTask {
 
     //期望的like:circle:{circle} score=xxx
     //点赞增加50 评论增加100 每小时减10
-    private final String REDIS_HOT_SORT_KEY = "like:circle";//临时热度榜单的前半部分key
-    private final String REDIS_HOT_SORT_KEY_FINAL = "like:cirle:final";//最终热度榜单的前半部分key
+    private final String REDIS_HOT_SORT_KEY = "like:circle";//临时热度榜单的前半部分key（大表）
+    private final String REDIS_HOT_SORT_KEY_FINAL = "like:circle:final";//最终热度榜单的前半部分key（小表）
 
 
-    // 每天凌晨3点整执行 将临时的热度榜单score小于等于0的删掉
+    // 每天凌晨3点整执行 将临时的热度榜单score小于等于0的删掉 （当数据不足10个的时候不再删除数据以保证一直有数据）
     @Scheduled(cron = "0 0 3 * * ?")
     public void RankingListCut() {
+        if (redisTemplate.opsForZSet().zCard(REDIS_HOT_SORT_KEY) <= 10) {
+            //如果数据不足10个的时候直接返回
+            return;
+        }
         try {
             Long removeCount = redisTemplate.opsForZSet().removeRangeByScore(REDIS_HOT_SORT_KEY, Double.NEGATIVE_INFINITY, 0);
             log.info("去掉了" + removeCount + "条信息");
@@ -43,34 +47,8 @@ public class DailyFourTask {
         } catch (Exception e) {
             throw new RuntimeException("将临时榜单的所有score下降10 出现错误！错误：" + e);
         }
-        //同步
-        try {
-            Set<ZSetOperations.TypedTuple<Object>> tuples = redisTemplate.opsForZSet()
-                    .reverseRangeWithScores(REDIS_HOT_SORT_KEY, 0, 9);
-            //删除该key下的所有数据
-            redisTemplate.opsForZSet().removeRange(REDIS_HOT_SORT_KEY_FINAL, 0, -1);
-            if (tuples != null) {
-                for (ZSetOperations.TypedTuple<Object> tuple : tuples) {
-                    if (tuple == null) {
-                        continue;
-                    }
-                    Object value = tuple.getValue();
-                    Double score = tuple.getScore();
-                    // ZSet 的 member 和 score 均不允许为 null，为 null 时跳过该条数据
-                    if (value == null || score == null) {
-                        continue;
-                    }
-                    // 只同步热度大于0的成员，负分或0分成员不再进入最终榜单
-                    if (score <= 0) {
-                        continue;
-                    }
-                    redisTemplate.opsForZSet().add(REDIS_HOT_SORT_KEY_FINAL, value, score);
-                }
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("同步到最终榜单 出现错误！错误：" + e);
-        }
-
+        //立马开始迁移数据
+        Temp2Final();
     }
 
 
@@ -91,7 +69,52 @@ public class DailyFourTask {
         }
     }
 
+    /**
+     * 立马开始一次从临时表到最终表迁移的动作
+     */
+    public void Temp2Final() {
+        //同步
+        try {
+            //获取临时表里面的前十个数据
+            Set<ZSetOperations.TypedTuple<Object>> tuples = redisTemplate.opsForZSet()
+                    .reverseRangeWithScores(REDIS_HOT_SORT_KEY, 0, 9);
+            //删除最终表下的所有数据
+            redisTemplate.opsForZSet().removeRange(REDIS_HOT_SORT_KEY_FINAL, 0, -1);
+            if (tuples != null) {
+                for (ZSetOperations.TypedTuple<Object> tuple : tuples) {
+                    if (tuple == null) {
+                        continue;
+                    }
+                    Object value = tuple.getValue();
+                    Double score = tuple.getScore();
+                    // ZSet 的 member 和 score 均不允许为 null，为 null 时跳过该条数据
+                    if (value == null || score == null) {
+                        continue;
+                    }
+                    // 只同步热度大于0的成员，负分或0分成员不再进入最终榜单
+                    if (score <= 0) {
+                        continue;
+                    }
+                    //将临时表里面或得到的数据全部存入最终表里面
+                    redisTemplate.opsForZSet().incrementScore(REDIS_HOT_SORT_KEY_FINAL, value, score);
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("同步到最终榜单 出现错误！错误：" + e);
+        }
+    }
 
+    /**
+     * 得到热度榜（临时榜单）的前十名的热度以及id
+     */
+    public LinkedHashMap<Double, Object> getHortScore0To9() {
+        LinkedHashMap<Double, Object> list = new LinkedHashMap<>();
+        Set<ZSetOperations.TypedTuple<Object>> tuples = redisTemplate.opsForZSet().rangeWithScores(REDIS_HOT_SORT_KEY, 0, 9);
+        for (ZSetOperations.TypedTuple<Object> tuple : tuples) {
+            list.put(tuple.getScore(), tuple.getValue());
+        }
+        return list;
+    }
 }
 
 

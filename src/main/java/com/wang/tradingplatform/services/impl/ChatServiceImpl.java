@@ -91,8 +91,8 @@ public class ChatServiceImpl implements ChatService {
     /**
      * 得到存在redis的私聊消息
      *
-     * @param itemQueryParam 需要传递sessionId pageNumber，pageSizemoren
-     * @return
+     * @param itemQueryParam 需要传递 sessionId、pageNumber、pageSize
+     * @return 私聊消息列表
      */
     @Override
     public List<ChatMessage> getPrivateHistoryRedis(ItemQueryParam itemQueryParam) {

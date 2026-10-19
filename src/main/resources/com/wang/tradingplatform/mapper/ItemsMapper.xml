@@ -4,8 +4,8 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wang.tradingplatform.mapper.ItemsMapper">
     <insert id="insert" parameterType="com.wang.tradingplatform.pojo.entity.Goods">
-        INSERT INTO goods (goods_id, user_id, goods_desc, price, original_price, tags, is_deleted)
-        VALUES (#{goodsId}, #{userId}, #{goodsDesc}, #{price}, #{originalPrice}, #{tags}, #{isDeleted})
+        INSERT INTO goods (goods_id, user_id, goods_desc, price, original_price, specs, is_deleted)
+        VALUES (#{goodsId}, #{userId}, #{goodsDesc}, #{price}, #{originalPrice}, #{specs}, #{isDeleted})
     </insert>
 
     <!--根据商品ID查找商品-->
@@ -30,10 +30,13 @@
         WHERE g.goods_id = #{id} AND g.is_deleted = 0
     </select>
 
-    <!-- 插入商品图片 -->
-    <insert id="insertImage" parameterType="com.wang.tradingplatform.pojo.entity.GoodsImage">
+    <!-- 批量插入商品图片 -->
+    <insert id="insertImages" parameterType="java.util.List">
         INSERT INTO goods_image (goods_id, img_url, img_width, img_height)
-        VALUES (#{goodsId}, #{imgUrl}, #{imgWidth}, #{imgHeight})
+        VALUES
+        <foreach collection="list" item="img" separator=",">
+            (#{img.goodsId}, #{img.imgUrl}, #{img.imgWidth}, #{img.imgHeight})
+        </foreach>
     </insert>
 
     <!-- 根据商品ID查询图片列表 -->
@@ -55,6 +58,7 @@
         <id column="g_goods_id" property="goodsId"/>
         <result column="user_id" property="userId"/>
         <result column="user_name" property="userName"/>
+        <result column="credit" property="credit"/>
         <result column="goods_desc" property="goodsDesc"/>
         <result column="price" property="price"/>
         <result column="original_price" property="originalPrice"/>
@@ -77,6 +81,7 @@
         g.goods_id AS g_goods_id,
         g.user_id,
         u.user_name,
+        u.credit,
         g.goods_desc,
         g.price,
         g.original_price,
@@ -315,7 +320,8 @@
     <!--我已经卖出的商品-->
     <select id="selectMySold" resultType="com.wang.tradingplatform.pojo.vo.GoodsVO">
         SELECT g.goods_id, g.goods_desc, gi.img_url, gi.img_width, gi.img_height,
-        IF( EXISTS(SELECT 1 FROM evaluate ev WHERE ev.goods_id = g.goods_id AND ev.evaluator_id = #{currentUserId}), 1, 0 ) AS has_evaluate
+        IF( EXISTS(SELECT 1 FROM evaluate ev WHERE ev.goods_id = g.goods_id AND ev.evaluator_id = #{currentUserId}), 1,
+        0 ) AS has_evaluate
         FROM goods g
         LEFT JOIN (SELECT goods_id,
         img_url,
@@ -333,7 +339,8 @@
         gi.img_url,
         gi.img_width,
         gi.img_height,
-        IF( EXISTS(SELECT 1 FROM evaluate ev WHERE ev.goods_id = g.goods_id AND ev.evaluator_id = #{currentUserId}), 1, 0 ) AS has_evaluate
+        IF( EXISTS(SELECT 1 FROM evaluate ev WHERE ev.goods_id = g.goods_id AND ev.evaluator_id = #{currentUserId}), 1,
+        0 ) AS has_evaluate
         FROM goods g
         LEFT JOIN (
         SELECT
@@ -352,5 +359,8 @@
         INSERT INTO evaluate (evaluator_id, evaluated_id, content, score, create_time, goods_id)
         VALUES (#{evaluatorId}, #{evaluatedId}, #{content}, #{score}, #{createTime}, #{goodsId})
     </insert>
-
+    <!--存储商品tag信息-->
+    <insert id="insertTagInformation">
+        INSERT INTO 'goods_tag' (tag_id, goods_id) VALUES (#{IntTag},#{goodsId})
+    </insert>
 </mapper>

@@ -15,7 +15,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -35,8 +34,10 @@ public class ChatController {
     /**
      * 构造函数注入
      *
-     * @param chatService
-     * @param messagingTemplate
+     * @param chatService 聊天服务
+     * @param messagingTemplate WebSocket 消息模板
+     * @param userService 用户服务
+     * @param redisUtil Redis 工具
      */
     public ChatController(ChatService chatService, SimpMessagingTemplate messagingTemplate, userService userService, RedisUtil redisUtil) {
         this.chatService = chatService;
@@ -48,10 +49,10 @@ public class ChatController {
 
     /**
      * 发送私聊消息
-     * 将接收到的消息保存并转发给订阅了"/user/exchange/amq.direct/private" 的特定用户
+     * 将接收到的消息保存并转发给订阅了"/exchange/amq.direct/private" 的特定用户
      *
-     * @param principal
-     * @param chatMessage
+     * @param principal 当前登录用户
+     * @param chatMessage 聊天消息
      */
     @MessageMapping("/chat/privateMessage")  //是类似于@PostMapping("/add")那样的东西，拦截有关信息
     public void sendPrivateMessage(Principal principal, ChatMessage chatMessage) {
@@ -139,22 +140,15 @@ public class ChatController {
     //交易状态 0 未确认 1 已有请求 2已同意请求 3已拒绝 4交易已完成
     @Operation(summary = "拒绝或者接受交易请求")
     @PostMapping("/tradeRequest/request")
-    @Transactional(rollbackFor = Exception.class)
     public void HandleTradeRequest(@RequestBody TradeRequest tradeRequest) {
         ParamUtil.notNull(tradeRequest, "交易请求");
         ParamUtil.positive(tradeRequest.getGoodsId(), "商品id");
         ParamUtil.positive(tradeRequest.getSessionId(), "会话id");
         ParamUtil.notNull(tradeRequest.getSelect(), "处理选项");
-        //先看该用户是否有权利
-        Integer row = userService.getPermission(UserContext.getCurrentUserId(), tradeRequest.getGoodsId());
-        if (row > 0) {
-            //将trade_transaction表进行数据同步
-            userService.HandleTradeRequest(tradeRequest.getSelect(), tradeRequest.getGoodsId(), tradeRequest.getSessionId());
-            //select 与 tradeState 含义重复，统一用 select 判断（2 同意）
-            if (tradeRequest.getSelect() == 2) {
-                //将goods表进行同步
-                userService.saleGoods(tradeRequest.getGoodsId(), tradeRequest.getToUid(), UserContext.getCurrentUserId());
-            }
+        //事务逻辑下沉到 service 层：校验权限 + 同步交易状态 + 同意时同步商品出售状态
+        boolean handled = userService.handleTradeRequest(
+                tradeRequest.getSelect(), tradeRequest.getGoodsId(), tradeRequest.getSessionId(), tradeRequest.getToUid());
+        if (handled) {
             //删除交易状态缓存（该缓存无过期时间），否则前端再次查询仍会命中旧状态
             redisUtil.delete("TradeState:" + tradeRequest.getSessionId() + tradeRequest.getGoodsId());
         }

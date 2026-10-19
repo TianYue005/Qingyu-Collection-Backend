@@ -16,10 +16,12 @@ import com.wang.tradingplatform.utils.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -35,8 +37,8 @@ public class UserController {
     /**
      * 用户注册
      *
-     * @param registerDTO
-     * @return
+     * @param registerDTO 注册请求参数
+     * @return 注册结果
      */
     @Operation(summary = "用户注册")
     @PostMapping("/register")
@@ -52,8 +54,8 @@ public class UserController {
     /**
      * 用户登录
      *
-     * @param loginDTO
-     * @return
+     * @param loginDTO 登录请求参数
+     * @return 登录结果（成功时返回 token）
      */
     @Operation(summary = "用户登录")
     @PostMapping("/login")
@@ -70,10 +72,21 @@ public class UserController {
         return Result.success(message);
     }
 
+    @Operation(summary = "修改用户名")
+    @PostMapping("/alterName/{name}")
+    public Result<Object> alterName(@PathVariable String name) {
+        ParamUtil.notBlank(name, "用户名");
+        Boolean b = userService.alterName(name);
+        if (b) {
+            return Result.success();
+        }
+        return Result.error("用户名修改失败");
+    }
+
     /**
      * 得到用户的用户名与账号
      *
-     * @param id
+     * @param id 用户id
      * @return Result<User>
      */
     @Operation(summary = "得到用户的用户名与账号")
@@ -129,13 +142,6 @@ public class UserController {
         return Result.success();
     }
 
-    //查看用户相关的评价 这个评论是指在交易完成之后 双方的互相评价  todo
-    @Operation(summary = "查看用户相关的评价")
-    @GetMapping("/review/{userId}")
-    public void selectReview() {
-        System.out.println("未完成");
-    }
-
     //当前用户的待处理交易
     @Operation(summary = "当前用户的待处理交易")
     @GetMapping("/pending/wait")
@@ -146,9 +152,18 @@ public class UserController {
 
     //查看评论  自己对别人的/别人对自己的
     @Operation(summary = "查看评论  自己对别人的/别人对自己的 ")
-    @GetMapping("/review")
+    @GetMapping("/myReview")
     public Result<PageResult<EvaluateVO>> selectMyReview(ItemQueryParam itemQueryParam) {
         log.info("========== 查看评论 自己对别人的/别人对自己的 ==========");
         return Result.success(userService.selectEvaluate(itemQueryParam));
     }
+
+    //别的用户的详情界面
+    @Operation(summary = "别的用户的详情界面")
+    @GetMapping("/thisUserDetail/{userId}")
+    public Result<User> thisUserDetail(@PathVariable Long userId) {
+        log.info("========== 查看别的用户的详情界面 ==========");
+        return Result.success(userService.selectThisUserDetail(userId));
+    }
+
 }

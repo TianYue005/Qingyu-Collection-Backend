@@ -13,9 +13,10 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class RedisUtil {
 
-    //期望的like:teamUp score=xxx
+    //期望的like:circle score=xxx
     //点赞增加50 评论增加100 每小时减10
-    public final String REDIS_HOT_SORT_KEY = "like:teamUp";
+    public final String REDIS_HOT_SORT_KEY = "like:circle";
+    public final String REDIS_HOT_SORT_KEY_FINAL = "like:circle:final";
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
@@ -102,9 +103,14 @@ public class RedisUtil {
     }
 
     // ===================== ZSet 有序集合 =====================
-    // 添加
+    // 添加（直接设置分数，会覆盖原值）
     public void zAdd(String key, Object value, double score) {
         redisTemplate.opsForZSet().add(key, value, score);
+    }
+
+    // 累加分数（ZINCRBY），用于热榜分数累加，避免覆盖
+    public Double zIncrementScore(String key, Object value, double delta) {
+        return redisTemplate.opsForZSet().incrementScore(key, value, delta);
     }
 
     // 范围查询

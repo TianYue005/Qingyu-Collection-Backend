@@ -14,6 +14,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+
 
 @Tag(name = "商品上架模块")
 @Slf4j
@@ -30,11 +34,8 @@ public class ItemsController {
     public Result<String> add(@RequestBody UploadItemDTO uploadItemDTO) {
         ParamUtil.notNull(uploadItemDTO, "商品信息");
         log.info("========== 添加商品 ==========");
-        Boolean b = itemServices.add(uploadItemDTO);
-        if (b) {
-            return Result.success("上架成功");
-        }
-        return Result.error("商品上架失败");
+        itemServices.add(uploadItemDTO);
+        return Result.success("上架成功");
     }
 
     //根据ID查找商品
@@ -104,17 +105,6 @@ public class ItemsController {
         ParamUtil.positive(id, "评论id");
         PageResult<CommentGoodsVO> page = itemServices.selectItemCommentInteraction(id);
         return Result.success(page);
-    }
-
-    //信用及评价 todo
-    @Operation(summary = "查看用户的评价以及别人对用户的评价")
-    @GetMapping("/select/comment")
-    public void selectComment(@RequestBody ItemQueryParam itemQueryParam) {
-        if (itemQueryParam.getTrait() == 3) {
-            //说明是在查询来自卖家对该用户的评价
-        } else {
-            //说明是该用户对交易的评价
-        }
     }
 
     //根据传递的商品id查询商品的简略信息，以实现会话列表的商品信息查询

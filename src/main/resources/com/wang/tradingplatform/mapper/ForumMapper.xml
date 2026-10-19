@@ -439,10 +439,16 @@
     </select>
     <!--根据id列表查询对应的简略信息-->
     <select id="selectSimpleInfoByList" resultType="com.wang.tradingplatform.pojo.entity.Circle">
-        SELECT id,title,category FROM circle WHERE id in
-        <foreach collection="idList" item="id" open="(" close=")" separator=",">
-            #{id}
+        SELECT id,title,category FROM circle
+        WHERE id IN
+        <foreach collection="idList" item="item" open="(" separator="," close=")">
+            #{item}
         </foreach>
+        ORDER BY FIELD(id,
+        <foreach collection="idList" item="item" separator=",">
+            #{item}
+        </foreach>
+        )
     </select>
     <!--看还有没有剩下的人数-->
     <select id="selectLeft" resultType="com.wang.tradingplatform.pojo.entity.TeamUp">

@@ -251,8 +251,6 @@ public class ForumServiceImpl implements ForumService {
         comment.setUserId(UserContext.getCurrentUserId());
         comment.setCreateTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
         forumMapper.addComment(comment);
-        //热度相关
-        redisUtil.zAdd(redisUtil.REDIS_HOT_SORT_KEY, comment.getTeamupId(), 100);
     }
 
     //分页查询组团评论
@@ -266,14 +264,6 @@ public class ForumServiceImpl implements ForumService {
             return new PageResult<>(page.getTotal(), CommentList);
         }
     }
-
-    /*//查询该评论在回复的那个评论（废弃）
-    @Override
-    public CommentVO searchComment(Integer id) {
-        //查看该id的评论的父评论的id
-        Integer parentId = forumMapper.searchCommentParentId(id);
-        return forumMapper.searchCommentById(parentId);
-    }*/
 
     //查看该评论之前的所有互动
     @Override
@@ -296,6 +286,8 @@ public class ForumServiceImpl implements ForumService {
         comment.setUserId(UserContext.getCurrentUserId());
         comment.setCreateTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
         forumMapper.addCommentCircle(comment);
+        //热度相关：圈子评论热度累加100（member统一用Long，与点赞保持一致）
+        redisUtil.zIncrementScore(redisUtil.REDIS_HOT_SORT_KEY, comment.getCircleId().longValue(), 100);
     }
 
     //查看圈子评论
@@ -354,7 +346,7 @@ public class ForumServiceImpl implements ForumService {
     @Override
     public Set<Object> selectHortSortCircle() {
         //从最终热度榜单中取出圈子id集合（key与DailyFourTask中的REDIS_HOT_SORT_KEY_FINAL保持一致）
-        return redisUtil.zReverseRange("like:cirle:final", 0, -1);
+        return redisUtil.zReverseRange(redisUtil.REDIS_HOT_SORT_KEY_FINAL, 0, -1);
     }
 
     //根据id列表查询对应的简略信息
@@ -376,8 +368,8 @@ public class ForumServiceImpl implements ForumService {
             throw new BusinessException("不可以重复点赞");
         }
         //运行到这里说明成功实现一次点赞
-        //为它在redis临时热度榜单中添加score（key与DailyFourTask中的REDIS_HOT_SORT_KEY保持一致）
-        redisUtil.zAdd("like:circle", circleId, 50);
+        //为它在redis临时热度榜单中累加score（key与DailyFourTask中的REDIS_HOT_SORT_KEY保持一致）
+        redisUtil.zIncrementScore(redisUtil.REDIS_HOT_SORT_KEY, circleId, 50);
     }
 
     //接受跑腿任务
@@ -407,8 +399,8 @@ public class ForumServiceImpl implements ForumService {
         if (row == 0) {
             throw new BusinessException("不可以重复点赞");
         }
-        //为它在redis临时热度榜单中添加score（与圈子点赞保持一致）
-        redisUtil.zAdd("like:circle", activityId, 50);
+        //为它在redis临时热度榜单中累加score（与圈子点赞保持一致）
+        redisUtil.zIncrementScore(redisUtil.REDIS_HOT_SORT_KEY, activityId, 50);
     }
 
     //加入热门活动

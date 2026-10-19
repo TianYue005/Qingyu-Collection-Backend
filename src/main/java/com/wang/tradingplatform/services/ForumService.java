@@ -60,9 +60,6 @@ public interface ForumService {
     //分页查询组团评论
     PageResult<CommentVO> selectComment(Long teamUpId);
 
-    /*//查询该评论在回复的那个评论（废弃）
-    CommentVO searchComment(Integer id);*/
-
     //查看该评论之前的所有互动
     PageResult<CommentVO> selectCommentInteraction(Integer commentId);
 

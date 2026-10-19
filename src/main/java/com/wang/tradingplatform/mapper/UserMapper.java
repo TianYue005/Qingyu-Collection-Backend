@@ -159,4 +159,16 @@ public interface UserMapper {
 
     //交易风险评估
     riskAssessment riskAssessment(Long userId);
+
+    //别的用户的详情界面
+    User selectThisUserDetail(Long userId);
+
+    //查询自己对别人的评价
+    EvaluateVO reviewsReceived(Long userid);
+
+    //对别人的评价
+    EvaluateVO reviews(Long userid);
+
+    //更改名字
+    Integer alterName(String name,Long userId);
 }
