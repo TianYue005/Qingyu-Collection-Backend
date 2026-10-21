@@ -11,29 +11,43 @@ import com.wang.tradingplatform.pojo.entity.*;
 import com.wang.tradingplatform.pojo.vo.CommentGoodsVO;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
+import com.wang.tradingplatform.pojo.vo.Result;
 import com.wang.tradingplatform.services.itemsServices;
 import com.wang.tradingplatform.utils.ListUtil;
 import com.wang.tradingplatform.utils.ParamUtil;
 import com.wang.tradingplatform.utils.SnowflakeIdUtil;
 import com.wang.tradingplatform.utils.UserContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
 public class itemsServicesImpl implements itemsServices {
+
     private final UserMapper userMapper;
     private final ItemsMapper itemsMapper;
     private final SnowflakeIdUtil snowflakeIdUtil;
+    private final RedisTemplate<String, Long> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplateObject;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final DefaultRedisScript<Long> initDataScript;
+    private final ObjectMapper objectMapper;
 
     private final Set<String> setCategory = new HashSet<>(Set.of("电子产品", "饰品", "家居", "未知", "全部"));
-    private final Map<Integer,String> setTag = new HashMap<>(Map.ofEntries(
+    private final Map<Integer, String> setTag = new HashMap<>(Map.ofEntries(
             Map.entry(0, "全新未拆"),
             Map.entry(1, "仅拆封"),
             Map.entry(2, "轻微使用痕迹"),
@@ -64,6 +78,9 @@ public class itemsServicesImpl implements itemsServices {
         if (uploadItemDTO.getPrice().compareTo(maxPrice) > 0) {
             throw new BusinessException("售卖价格不能超过 99999999.99 元");
         }
+        if (uploadItemDTO.getSpecs() == null || uploadItemDTO.getSpecs().length == 0) {
+            throw new BusinessException("商品规格不能为空");
+        }
         if (uploadItemDTO.getOriginalPrice() != null && uploadItemDTO.getOriginalPrice().compareTo(maxPrice) > 0) {
             throw new BusinessException("原价不能超过 99999999.99 元");
         }
@@ -72,9 +89,9 @@ public class itemsServicesImpl implements itemsServices {
         if (!ListUtil.ListAIfListB(hSet, setCategory)) {
             throw new BusinessException("商品规格不合法");
         }
-        HashSet<String> hSet2 = new HashSet<>(List.of(uploadItemDTO.getSpecs()));
+        HashSet<String> hSet2 = new HashSet<>(List.of(uploadItemDTO.getTag()));
         Integer l = ListUtil.ListAIfListB(hSet2, setTag);
-        if (l==null) {
+        if (l == null) {
             throw new BusinessException("商品属性不合法");
         }
         Long goodsId = snowflakeIdUtil.nextId();
@@ -114,7 +131,6 @@ public class itemsServicesImpl implements itemsServices {
                 itemQueryParam.getSortRules())) {
             //调用mapper接口执行查询 查到的数据是没有图片的
             List<GoodsVO> goodsList = itemsMapper.page(UserContext.getCurrentUserId());
-            System.out.println("信誉分：" + goodsList.getFirst().getCredit());
             //构造并返回分页结果对象，包含总记录数和当前页数据
             return new PageResult<GoodsVO>(page.getTotal(), goodsList);
         }
@@ -127,7 +143,7 @@ public class itemsServicesImpl implements itemsServices {
         GoodsVO goodsById = itemsMapper.findGoodsById(id);
         //查看某商品是否被收藏
         Integer is = itemsMapper.isFavourite(id, UserContext.getCurrentUserId());
-        if (is != null && id != 0) {
+        if (is != null) {
             goodsById.setFavourite(true);
         }
         return goodsById;
@@ -231,5 +247,76 @@ public class itemsServicesImpl implements itemsServices {
         evaluate.setGoodsId(dto.getGoodsId());
         evaluate.setCreateTime(LocalDateTime.now(ZoneId.of("Asia/Shanghai")));
         return itemsMapper.insertEvaluate(evaluate) > 0;
+    }
+
+    //商品推荐
+    @Override
+    public Result<List<GoodsVO>> Recommend() {
+        // 推荐位数据已整体缓存在 Redis（ZSet 成员是商品详情JSON），直接读取，无需再查MySQL
+        Set<String> jsonList = stringRedisTemplate.opsForZSet().range("goods:recommend", 0, 4);
+        if (jsonList == null || jsonList.isEmpty()) {
+            throw new RuntimeException("数据不足");
+        }
+        List<GoodsVO> goodsList = jsonList.stream()
+                .map(this::parseGoods)
+                .filter(Objects::nonNull)
+                .toList();
+        return Result.success(goodsList);
+    }
+
+    /**
+     * 将自己的商品购买推荐位
+     * 脚本功能：先把同一个商品的旧数据删掉 → 看看推荐位前 5 个位置满没满 → 没满就把最新商品详情写进去 → 返回还剩几个空位。
+     * todo 建立在redis有持久化存储 比如 RDB
+     * @param goodsId
+     * @return
+     */
+    @Override
+    public Result<String> RecommendedSpot(Long goodsId) {
+        ParamUtil.positive(goodsId, "商品id");
+        // 从 MySQL 校验商品是否可推荐，并获取最新详情（权威数据源）
+        List<GoodsVO> recommend = itemsMapper.getRecommend(Set.of(goodsId));
+        if (recommend == null || recommend.isEmpty()) {
+            return Result.error("商品不存在或已售出，无法推荐");
+        }
+        String goodsJson = toJson(recommend.getFirst());
+        // 第一次：Lua 原子完成“删旧条目 + 检查空位 + 写入最新详情”
+        Long remain = stringRedisTemplate.execute(
+                initDataScript,
+                List.of("goods:recommend"),
+                goodsId.toString(),
+                goodsJson,
+                "99");
+        if (remain == null || remain < 0) {
+            return Result.error("空位不够啦，以后再来吧");
+        }
+        // 延迟双删：500ms 后再执行一次“删旧写新”，清理并发窗口内可能写入的旧快照，保证最终一致
+        CompletableFuture.runAsync(
+                () -> stringRedisTemplate.execute(
+                        initDataScript,
+                        List.of("goods:recommend"),
+                        goodsId.toString(),
+                        goodsJson,
+                        "99"),
+                CompletableFuture.delayedExecutor(500, TimeUnit.MILLISECONDS));
+        return Result.success("添加成功");
+    }
+
+    // 将商品详情序列化为JSON，用于写入Redis缓存
+    private String toJson(GoodsVO goods) {
+        try {
+            return objectMapper.writeValueAsString(goods);
+        } catch (JacksonException e) {
+            throw new RuntimeException("商品信息序列化失败", e);
+        }
+    }
+
+    // 将Redis中的JSON反序列化为商品详情，脏数据解析失败返回null由调用方过滤
+    private GoodsVO parseGoods(String json) {
+        try {
+            return objectMapper.readValue(json, GoodsVO.class);
+        } catch (JacksonException e) {
+            return null;
+        }
     }
 }

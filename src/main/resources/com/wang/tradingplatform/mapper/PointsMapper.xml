@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wang.tradingplatform.mapper.PointsMapper">
+    <!--抽奖-->
+    <update id="raffle">
+        UPDATE user
+        SET balance=balance+#{reward}-30
+        WHERE user_id=#{currentUserId} AND balance >= 30
+    </update>
+    <!--检查积余额-->
+    <select id="check" resultType="java.lang.Integer">
+        SELECT balance FROM user WHERE user_id=#{currentUserId}
+    </select>
+</mapper>

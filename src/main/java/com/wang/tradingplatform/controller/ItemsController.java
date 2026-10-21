@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -145,5 +146,19 @@ public class ItemsController {
     @PostMapping("/evaluate/buyer")
     public Result<String> evaluateBuyer(@RequestBody EvaluateDTO evaluateDTO) {
         return evaluate(evaluateDTO);
+    }
+
+    //商品推荐
+    @Operation(summary = "商品推荐")
+    @GetMapping("/recommend")
+    public Result<List<GoodsVO>>  Recommend() {
+        return itemServices.Recommend();
+    }
+
+    //将自己的商品购买推荐位
+    @Operation(summary = "将自己的商品购买推荐位")
+    @PostMapping("/recommend/RecommendedSpot/{goodsId}")
+    public Result<String> RecommendedSpot(@PathVariable Long goodsId){
+        return itemServices.RecommendedSpot(goodsId);
     }
 }

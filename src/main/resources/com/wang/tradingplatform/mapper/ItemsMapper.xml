@@ -3,9 +3,9 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wang.tradingplatform.mapper.ItemsMapper">
-    <insert id="insert" parameterType="com.wang.tradingplatform.pojo.entity.Goods">
-        INSERT INTO goods (goods_id, user_id, goods_desc, price, original_price, specs, is_deleted)
-        VALUES (#{goodsId}, #{userId}, #{goodsDesc}, #{price}, #{originalPrice}, #{specs}, #{isDeleted})
+    <insert id="insert" parameterType="com.wang.tradingplatform.pojo.dto.UploadItemDTO">
+        INSERT INTO goods (goods_id, user_id, goods_desc, price, original_price, specs)
+        VALUES (#{goodsId}, #{userId}, #{description}, #{price}, #{originalPrice}, #{specs})
     </insert>
 
     <!--根据商品ID查找商品-->
@@ -354,6 +354,46 @@
         WHERE g.sold = #{currentUserId} AND g.finished IS NOT NULL
     </select>
 
+    <resultMap id="getRecommendResultMap" type="com.wang.tradingplatform.pojo.vo.GoodsVO">
+        <id column="goods_id" property="goodsId"/>
+        <result column="user_id" property="userId"/>
+        <result column="goods_desc" property="goodsDesc"/>
+        <result column="price" property="price"/>
+        <result column="original_price" property="originalPrice"/>
+        <result column="sold" property="sold"/>
+        <result column="finished" property="finished"/>
+        <collection property="imgList" ofType="com.wang.tradingplatform.pojo.entity.GoodsImage">
+            <id column="goods_id" property="goodsId"/>
+            <result column="img_url" property="imgUrl"/>
+            <result column="img_height" property="imgHeight"/>
+            <result column="img_width" property="imgWidth"/>
+        </collection>
+    </resultMap>
+
+    <!--商品推荐-->
+    <select id="getRecommend" resultMap="getRecommendResultMap">
+        SELECT
+        g.goods_id,
+        g.user_id,
+        g.goods_desc,
+        g.price,
+        g.original_price,
+        g.sold,
+        g.finished,
+        gi.goods_id,
+        gi.img_url,
+        gi.img_height,
+        gi.img_width
+        FROM goods g
+        LEFT JOIN goods_image gi on g.goods_id = gi.goods_id
+        WHERE g.goods_id IN
+        <foreach collection="idList" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND is_deleted = 0
+        AND finished IS NULL
+    </select>
+
     <!--评价交易对方-->
     <insert id="insertEvaluate" parameterType="com.wang.tradingplatform.pojo.entity.Evaluate">
         INSERT INTO evaluate (evaluator_id, evaluated_id, content, score, create_time, goods_id)
@@ -361,6 +401,6 @@
     </insert>
     <!--存储商品tag信息-->
     <insert id="insertTagInformation">
-        INSERT INTO 'goods_tag' (tag_id, goods_id) VALUES (#{IntTag},#{goodsId})
+        INSERT INTO `goods_tag` (tag_id, goods_id) VALUES (#{intTag},#{goodsId})
     </insert>
 </mapper>

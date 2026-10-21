@@ -166,34 +166,46 @@
             <version>3.18.4</version>
         </dependency>
 
-
         <dependency>
             <groupId>org.jspecify</groupId>
             <artifactId>jspecify</artifactId>
             <version>1.0.0</version>
         </dependency>
+
         <!--Qdrant-->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-vector-store-qdrant</artifactId>
             <scope>compile</scope>
         </dependency>
+
         <!-- 通义千问(DashScope)通过 OpenAI 兼容协议接入，版本由 spring-ai-bom 统一管理 -->
         <!--用于阿里云 Embedding (利用 OpenAI 兼容模式)-->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-model-openai</artifactId>
         </dependency>
+
         <!--用于 DeepSeek 官方对话模型-->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-model-deepseek</artifactId>
         </dependency>
+
         <!--RAG 检索增强：提供 QuestionAnswerAdvisor-->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-vector-store-advisor</artifactId>
         </dependency>
+
+        <!-- Redisson -->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson-spring-boot-starter</artifactId>
+            <version>4.8.0</version>
+            <scope>compile</scope>
+        </dependency>
+
 
     </dependencies>
 

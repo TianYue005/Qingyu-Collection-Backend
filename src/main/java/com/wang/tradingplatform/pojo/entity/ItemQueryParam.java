@@ -24,12 +24,14 @@ public class ItemQueryParam {
     String sortRules;//排序规则 暂时还没有想好相关用法 todo 暂未启用
     /*圈子模块*/
     private String option;
+
     /*组团模块*/
     //组团的分类 自习，游戏，电影......
     String type;
     /*聊天部分*/
     //sessionId
     private Long sessionId;
+
     /*评论相关*/
     //评论特质 0全部（是指该用户对其他人的评论） 1好评 2差评 3来自卖家（只有来自卖家部分能看到卖家的评论）
     private Integer trait;

@@ -3,12 +3,12 @@ package com.wang.tradingplatform.services;
 import com.wang.tradingplatform.pojo.dto.EvaluateDTO;
 import com.wang.tradingplatform.pojo.dto.UploadItemDTO;
 import com.wang.tradingplatform.pojo.entity.CommentGoods;
-import com.wang.tradingplatform.pojo.entity.Goods;
 import com.wang.tradingplatform.pojo.entity.ItemQueryParam;
 import com.wang.tradingplatform.pojo.entity.ProductAssociationVO;
 import com.wang.tradingplatform.pojo.vo.CommentGoodsVO;
 import com.wang.tradingplatform.pojo.vo.GoodsVO;
 import com.wang.tradingplatform.pojo.vo.PageResult;
+import com.wang.tradingplatform.pojo.vo.Result;
 
 import java.util.List;
 
@@ -48,4 +48,10 @@ public interface itemsServices {
 
     //评价交易对方
     Boolean evaluate(EvaluateDTO dto);
+
+    //商品推荐
+    Result<List<GoodsVO>> Recommend();
+
+    //将自己的商品购买推荐位
+    Result<String> RecommendedSpot(Long goodsId);
 }
