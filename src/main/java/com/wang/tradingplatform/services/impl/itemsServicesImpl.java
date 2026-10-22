@@ -18,7 +18,6 @@ import com.wang.tradingplatform.utils.ParamUtil;
 import com.wang.tradingplatform.utils.SnowflakeIdUtil;
 import com.wang.tradingplatform.utils.UserContext;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
