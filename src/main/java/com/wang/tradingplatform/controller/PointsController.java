@@ -3,7 +3,6 @@ package com.wang.tradingplatform.controller;
 import com.wang.tradingplatform.pojo.entity.Raffle;
 import com.wang.tradingplatform.pojo.vo.Result;
 import com.wang.tradingplatform.services.impl.PointsServiceImpl;
-import com.wang.tradingplatform.utils.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

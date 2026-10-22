@@ -13,7 +13,7 @@ public class RedissonConfig {
     @Value("${spring.data.redis.host}")
     private String host;
 
-    @Value("${spring.data.redis.host}")
+    @Value("${spring.data.redis.port}")
     private Integer port;
 
     @Value("${spring.data.redis.password}")
@@ -28,9 +28,10 @@ public class RedissonConfig {
     public RedissonClient redissonClient() {
         Config config = new Config();
         // 单机redis，集群用useClusterServers
+        // 密码已从 SingleServerConfig 上移到 Config 级别（Redisson 4.x 起）
+        config.setPassword(password);
         config.useSingleServer()
                 .setAddress("redis://"+host+":"+port)
-                .setPassword(password)
                 .setDatabase(database);
         return Redisson.create(config);
     }

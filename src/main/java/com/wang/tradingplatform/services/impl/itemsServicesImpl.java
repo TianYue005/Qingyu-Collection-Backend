@@ -40,8 +40,6 @@ public class itemsServicesImpl implements itemsServices {
     private final UserMapper userMapper;
     private final ItemsMapper itemsMapper;
     private final SnowflakeIdUtil snowflakeIdUtil;
-    private final RedisTemplate<String, Long> redisTemplate;
-    private final RedisTemplate<String, Object> redisTemplateObject;
     private final StringRedisTemplate stringRedisTemplate;
     private final DefaultRedisScript<Long> initDataScript;
     private final ObjectMapper objectMapper;
@@ -132,7 +130,7 @@ public class itemsServicesImpl implements itemsServices {
             //调用mapper接口执行查询 查到的数据是没有图片的
             List<GoodsVO> goodsList = itemsMapper.page(UserContext.getCurrentUserId());
             //构造并返回分页结果对象，包含总记录数和当前页数据
-            return new PageResult<GoodsVO>(page.getTotal(), goodsList);
+            return new PageResult<>(page.getTotal(), goodsList);
         }
     }
 
@@ -268,8 +266,6 @@ public class itemsServicesImpl implements itemsServices {
      * 将自己的商品购买推荐位
      * 脚本功能：先把同一个商品的旧数据删掉 → 看看推荐位前 5 个位置满没满 → 没满就把最新商品详情写进去 → 返回还剩几个空位。
      * todo 建立在redis有持久化存储 比如 RDB
-     * @param goodsId
-     * @return
      */
     @Override
     public Result<String> RecommendedSpot(Long goodsId) {

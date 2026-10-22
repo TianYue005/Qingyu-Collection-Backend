@@ -34,7 +34,7 @@
     <insert id="insertImages" parameterType="java.util.List">
         INSERT INTO goods_image (goods_id, img_url, img_width, img_height)
         VALUES
-        <foreach collection="list" item="img" separator=",">
+        <foreach collection="goodsImages" item="img" separator=",">
             (#{img.goodsId}, #{img.imgUrl}, #{img.imgWidth}, #{img.imgHeight})
         </foreach>
     </insert>

@@ -1,6 +1,5 @@
 package com.wang.tradingplatform.mapper;
 
-import com.wang.tradingplatform.pojo.entity.Raffle;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
